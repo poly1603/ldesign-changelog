@@ -1,0 +1,37 @@
+# Source files
+src/
+__tests__/
+
+# Config files
+tsconfig.json
+tsconfig.*.json
+tsup.config.ts
+vitest.config.ts
+.gitignore
+.eslintrc.*
+.prettierrc.*
+
+# Documentation (除了 README 和 LICENSE)
+CONTRIBUTING.md
+*.md
+!README.md
+!CHANGELOG.md
+
+# Test and coverage
+coverage/
+*.test.ts
+*.spec.ts
+
+# Development
+.vscode/
+.idea/
+*.swp
+
+# Build artifacts
+*.tsbuildinfo
+.cache/
+
+# Misc
+.DS_Store
+*.log
+

@@ -1,0 +1,57 @@
+## [<%= version %>] - <%= date %>
+
+    <% if (compareUrl) { %>
+      **Full Changelog**: <%= compareUrl %>
+
+        <% } %>
+          <% if (breakingChanges && breakingChanges.length> 0) { %>
+            ### 💥 Breaking Changes
+
+            <% breakingChanges.forEach(function(bc) { %>
+              - <%= bc.description %>
+                <% if (bc.migration) { %>
+                  - **Migration**: <%= bc.migration %>
+                    <% } %>
+                      <% }) %>
+
+                        <% } %>
+                          <% sections.forEach(function(section) { %>
+                            <% if (section.commits.length> 0) { %>
+                              ### <%= section.title %>
+
+                                <% section.commits.forEach(function(commit) { %>
+                                  - <% if (commit.scope) { %>**<%= commit.scope %>**: <% } %>
+                                        <%= commit.subject %>
+                                          <% if (commit.prLink) { %> ([#<%= commit.pr %>](<%= commit.prLink %>))<% } %>
+                                                  <% if (commit.commitLink) { %> ([<%= commit.shortHash %>](<%=
+                                                        commit.commitLink %>))<% } %>
+                                                          <% if (commit.author) { %> - @<%= commit.author.username ||
+                                                              commit.author.name %>
+                                                              <% } %>
+                                                                <% }) %>
+
+                                                                  <% } %>
+                                                                    <% }) %>
+                                                                      <% if (contributors && contributors.length> 0) {
+                                                                        %>
+                                                                        ### 👥 Contributors
+
+                                                                        <%= contributors.map(c=> c.username ? '@' +
+                                                                          c.username : c.name).join(', ') %>
+
+                                                                          <% } %>
+                                                                            <% if (stats) { %>
+                                                                              ### 📊 Statistics
+
+                                                                              - Total Commits: **<%= stats.totalCommits
+                                                                                %>**
+                                                                                - Contributors: **<%=
+                                                                                  stats.contributorCount %>**
+                                                                                  <% if (stats.prCount) { %>- Pull
+                                                                                    Requests: **<%= stats.prCount %>**<%
+                                                                                        } %>
+                                                                                        <% if (stats.issueCount) { %>-
+                                                                                          Issues Closed: **<%=
+                                                                                            stats.issueCount %>**<% } %>
+
+                                                                                              <% } %>

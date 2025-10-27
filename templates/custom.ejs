@@ -1,0 +1,90 @@
+<!-- 
+  自定义 Changelog 模板示例
+  
+  可用变量:
+  - version: 版本号
+  - date: 发布日期
+  - sections: 按类型分组的章节数组
+  - commits: 所有提交数组
+  - breakingChanges: 破坏性变更数组
+  - contributors: 贡献者数组
+  - stats: 统计信息对象
+  - compareUrl: 比较链接
+  
+  辅助函数:
+  - helpers.formatDate(date, format)
+  - helpers.escapeMarkdown(text)
+  - helpers.capitalize(text)
+  - helpers.link(text, url)
+-->
+
+# Release <%= version %> (<%= date %>)
+
+    ## 📝 What's Changed
+
+    <% sections.forEach(function(section) { %>
+      <% if (section.commits.length> 0) { %>
+        ### <%= section.title %> (<%= section.commits.length %>)
+
+            <% section.commits.forEach(function(commit) { %>
+              * <%= commit.subject %>
+                <% if (commit.commitLink) { %> - [<%= commit.shortHash %>](<%= commit.commitLink %>)<% } %>
+                        <% if (commit.scope) { %>**Scope**: <%= commit.scope %>
+                            <% } %>
+                              <% if (commit.author) { %>**Author**: <%= commit.author.name %>
+                                  <% } %>
+                                    <% }) %>
+
+                                      <% } %>
+                                        <% }) %>
+
+                                          <% if (breakingChanges && breakingChanges.length> 0) { %>
+                                            ## ⚠️ Breaking Changes
+
+                                            <% breakingChanges.forEach(function(bc) { %>
+                                              ### <%= bc.description %>
+
+                                                <% if (bc.migration) { %>
+                                                  **Migration Guide**: <%= bc.migration %>
+                                                    <% } %>
+
+                                                      Related commit: <%= bc.commit.subject %> ([<%= bc.commit.shortHash
+                                                          %>](<%= bc.commit.commitLink %>))
+
+                                                            <% }) %>
+                                                              <% } %>
+
+                                                                <% if (contributors && contributors.length> 0) { %>
+                                                                  ## 🙏 Thank You
+
+                                                                  A big thank you to all our contributors:
+
+                                                                  <% contributors.forEach(function(contributor) { %>
+                                                                    - **<%= contributor.name %>** (<%=
+                                                                        contributor.commitCount %> commits)
+                                                                        <% }) %>
+                                                                          <% } %>
+
+                                                                            <% if (stats) { %>
+                                                                              ## 📈 Statistics
+
+                                                                              - **Total Commits**: <%=
+                                                                                stats.totalCommits %>
+                                                                                - **Contributors**: <%=
+                                                                                  stats.contributorCount %>
+                                                                                  <% if (stats.durationDays) { %>-
+                                                                                    **Development Duration**: <%=
+                                                                                      stats.durationDays %> days<% } %>
+                                                                                        <% if (stats.commitsPerDay) { %>
+                                                                                          - **Average Commits/Day**: <%=
+                                                                                            stats.commitsPerDay.toFixed(2)
+                                                                                            %>
+                                                                                            <% } %>
+                                                                                              <% } %>
+
+                                                                                                <% if (compareUrl) { %>
+                                                                                                  ---
+
+                                                                                                  [View Full Changelog](
+                                                                                                  <%= compareUrl %>)
+                                                                                                    <% } %>

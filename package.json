@@ -1,0 +1,115 @@
+{
+  "name": "@ldesign/changelog",
+  "version": "1.0.0",
+  "description": "📝 自动化的版本管理工具，让变更日志维护变得轻松 - 支持多格式输出、自定义模板、统计分析",
+  "keywords": [
+    "changelog",
+    "conventional-commits",
+    "version",
+    "release",
+    "git",
+    "markdown",
+    "json",
+    "html",
+    "template",
+    "statistics",
+    "ldesign"
+  ],
+  "author": "LDesign Team",
+  "license": "MIT",
+  "homepage": "https://github.com/ldesign/tools/changelog#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ldesign/tools/changelog"
+  },
+  "bugs": {
+    "url": "https://github.com/ldesign/tools/changelog/issues"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js",
+      "require": "./dist/core/index.cjs"
+    },
+    "./formatters": {
+      "types": "./dist/formatters/index.d.ts",
+      "import": "./dist/formatters/index.js",
+      "require": "./dist/formatters/index.cjs"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js",
+      "require": "./dist/types/index.cjs"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils/index.js",
+      "require": "./dist/utils/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "ldesign-changelog": "./bin/cli.js",
+    "ld-changelog": "./bin/cli.js"
+  },
+  "files": [
+    "README.md",
+    "LICENSE",
+    "package.json",
+    "dist",
+    "bin",
+    "templates"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "type-check": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@ldesign/kit": "workspace:*",
+    "chalk": "^5.3.0",
+    "commander": "^12.0.0",
+    "ejs": "^3.1.9",
+    "execa": "^8.0.1",
+    "fast-glob": "^3.3.2",
+    "fs-extra": "^11.2.0",
+    "ora": "^8.0.1",
+    "semver": "^7.6.0",
+    "boxen": "^7.1.1",
+    "cli-table3": "^0.6.5",
+    "dayjs": "^1.11.10"
+  },
+  "devDependencies": {
+    "@types/ejs": "^3.1.5",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^20.11.16",
+    "@types/semver": "^7.5.6",
+    "@vitest/coverage-v8": "^1.6.1",
+    "@vitest/ui": "^1.6.1",
+    "eslint": "^9.18.0",
+    "rimraf": "^5.0.5",
+    "tsup": "^8.0.0",
+    "typescript": "^5.7.3",
+    "vitest": "^1.6.1"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}
+
