@@ -17,9 +17,11 @@ import {
   pushGitTag,
   isWorkingTreeClean,
   getLatestTag,
+  getRepositoryInfo,
 } from '../../utils/git-utils.js'
 import { logger } from '../../utils/logger.js'
 import { loadConfig } from '../config-loader.js'
+import { createGitHubReleaseManager, GitHubReleaseManager } from '../../integrations/GitHubReleaseManager.js'
 
 /**
  * 创建 release 命令
@@ -38,6 +40,10 @@ export function createReleaseCommand(): Command {
     .option('--config <file>', '配置文件路径')
     .option('--skip-changelog', '跳过 Changelog 生成')
     .option('--force', '强制执行（跳过工作区检查）')
+    .option('--github-release', '创建 GitHub Release')
+    .option('--prerelease', '标记为预发布版本')
+    .option('--draft', '创建为草稿')
+    .option('--assets <files...>', '要上传的资源文件')
     .action(async (options) => {
       try {
         const spinner = logger.startSpinner('准备发布...')
@@ -92,14 +98,17 @@ export function createReleaseCommand(): Command {
         logger.updateSpinner(`新版本: ${newVersion}`)
 
         // 生成 Changelog
+        const config = await loadConfig(options.config)
+        let changelogContent
+        
         if (!options.skipChangelog) {
           logger.updateSpinner('正在生成 Changelog...')
 
-          const config = await loadConfig(options.config)
           const generator = createChangelogGenerator(config)
 
           const lastTag = await getLatestTag()
-          await generator.generateAndWrite(newVersion, lastTag || undefined, 'HEAD')
+          changelogContent = await generator.generate(newVersion, lastTag || undefined, 'HEAD')
+          await generator.write(changelogContent)
 
           logger.updateSpinner('Changelog 已生成')
         }
@@ -122,6 +131,34 @@ export function createReleaseCommand(): Command {
           }
         }
 
+        // 创建 GitHub Release
+        if (options.githubRelease && changelogContent) {
+          logger.updateSpinner('正在创建 GitHub Release...')
+
+          try {
+            // 获取仓库信息
+            const repoInfo = await getRepositoryInfo(cwd)
+            const repoConfig = GitHubReleaseManager.parseRepoUrl(repoInfo?.url || '')
+
+            if (!repoConfig) {
+              logger.warn('无法解析仓库信息，跳过 GitHub Release 创建')
+            } else {
+              const releaseManager = createGitHubReleaseManager({
+                owner: repoConfig.owner,
+                repo: repoConfig.repo,
+                prerelease: options.prerelease,
+                draft: options.draft,
+                assets: options.assets,
+              })
+
+              await releaseManager.createRelease(newVersion, changelogContent)
+              logger.updateSpinner('GitHub Release 已创建')
+            }
+          } catch (error: any) {
+            logger.warn(`创建 GitHub Release 失败: ${error.message}`)
+          }
+        }
+
         logger.stopSpinner(true, `版本 ${newVersion} 发布成功！`)
 
         // 输出后续步骤提示
@@ -129,12 +166,14 @@ export function createReleaseCommand(): Command {
         if (!options.skipChangelog) {
           logger.info('1. 检查生成的 Changelog')
         }
-        logger.info('2. 提交更改: git add . && git commit -m "chore: release v' + newVersion + '"')
-        if (!options.tag) {
-          logger.info('3. 创建 tag: git tag v' + newVersion)
-        }
-        if (!options.push) {
-          logger.info('4. 推送到远程: git push && git push --tags')
+        if (!options.githubRelease) {
+          logger.info('2. 提交更改: git add . && git commit -m "chore: release v' + newVersion + '"')
+          if (!options.tag) {
+            logger.info('3. 创建 tag: git tag v' + newVersion)
+          }
+          if (!options.push) {
+            logger.info('4. 推送到远程: git push && git push --tags')
+          }
         }
       } catch (error: any) {
         logger.stopSpinner(false)

@@ -86,6 +86,12 @@ export interface ChangelogCommit {
 
   /** Commit 链接 */
   commitLink?: string
+
+  /** 是否为依赖更新 */
+  isDependency?: boolean
+
+  /** 是否为安全修复 */
+  isSecurity?: boolean
 }
 
 /**

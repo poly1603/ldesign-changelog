@@ -14,6 +14,10 @@ import { createGenerateCommand } from './commands/generate.js'
 import { createReleaseCommand } from './commands/release.js'
 import { createStatsCommand } from './commands/stats.js'
 import { createInitCommand } from './commands/init.js'
+import { createValidateCommand } from './commands/validate.js'
+import { createLintCommand } from './commands/lint.js'
+import { createPreviewCommand } from './commands/preview.js'
+import { createDiffCommand } from './commands/diff.js'
 import { logger } from '../utils/logger.js'
 
 // 获取当前文件的目录
@@ -83,6 +87,10 @@ async function main(): Promise<void> {
   program.addCommand(createReleaseCommand())
   program.addCommand(createStatsCommand())
   program.addCommand(createInitCommand())
+  program.addCommand(createValidateCommand())
+  program.addCommand(createLintCommand())
+  program.addCommand(createPreviewCommand())
+  program.addCommand(createDiffCommand())
 
   // 解析命令行参数
   await program.parseAsync(process.argv)

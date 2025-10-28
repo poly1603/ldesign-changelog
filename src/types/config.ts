@@ -48,6 +48,12 @@ export interface ChangelogConfig {
   /** 是否重新生成完整 changelog */
   regenerate?: boolean
 
+  /** 更新模式：prepend（新版本添加到顶部）、append（添加到底部）、overwrite（覆盖） */
+  updateMode?: 'prepend' | 'append' | 'overwrite'
+
+  /** 是否保留历史版本 */
+  keepHistory?: boolean
+
   /** 仓库 URL */
   repositoryUrl?: string
 
@@ -56,6 +62,21 @@ export interface ChangelogConfig {
 
   /** 格式选项 */
   formatOptions?: FormatOptions
+
+  /** scope 过滤（只包含指定 scope 的提交） */
+  scopeFilter?: string[]
+
+  /** 按作者分组 */
+  groupByAuthor?: boolean
+
+  /** 是否单独显示依赖更新 */
+  separateDependencies?: boolean
+
+  /** 是否标记安全修复 */
+  highlightSecurity?: boolean
+
+  /** Monorepo 配置 */
+  monorepo?: MonorepoConfig
 }
 
 /**
@@ -138,6 +159,26 @@ export interface HtmlFormatOptions {
 }
 
 /**
+ * Monorepo 配置
+ */
+export interface MonorepoConfig {
+  /** 是否为每个包生成独立的 changelog */
+  enabled: boolean
+
+  /** 包路径列表 */
+  packages?: string[]
+
+  /** tag 前缀格式（例：@scope/package-name@） */
+  tagPrefix?: string
+
+  /** 是否合并所有包的 changelog */
+  mergeChangelogs?: boolean
+
+  /** 输出文件名模式 */
+  outputPattern?: string
+}
+
+/**
  * 模板配置
  */
 export interface TemplateConfig {
@@ -182,6 +223,8 @@ export const DEFAULT_CONFIG: Required<Omit<ChangelogConfig, 'template' | 'reposi
   language: 'zh-CN',
   headerFormat: '## [{version}] - {date}',
   regenerate: false,
+  updateMode: 'prepend',
+  keepHistory: true,
   versionFormat: 'v{version}',
 }
 

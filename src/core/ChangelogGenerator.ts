@@ -340,41 +340,74 @@ export class ChangelogGenerator {
     await backupFile(path)
 
     const existingContent = await readFileContent(path)
+    const updateMode = this.config.updateMode || 'prepend'
 
     let mergedContent: string
 
-    if (this.config.format === 'markdown') {
-      // Markdown 格式：插入到标题后
-      const headerMatch = existingContent.match(/^#\s+.+\n+/)
-      if (headerMatch) {
-        const header = headerMatch[0]
-        const rest = existingContent.substring(header.length)
-        mergedContent = `${header}${newContent}\n\n${rest}`
-      } else {
-        mergedContent = `${newContent}\n\n${existingContent}`
-      }
+    if (updateMode === 'overwrite') {
+      // 覆盖模式：直接使用新内容
+      mergedContent = newContent
+    } else if (this.config.format === 'markdown') {
+      mergedContent = this.mergeMarkdownChangelog(existingContent, newContent, updateMode)
     } else if (this.config.format === 'json') {
-      // JSON 格式：合并版本数组
-      try {
-        const existing = JSON.parse(existingContent)
-        const newData = JSON.parse(newContent)
-
-        if (existing.versions && newData.version) {
-          existing.versions.unshift(newData)
-        } else {
-          existing.versions = [newData]
-        }
-
-        mergedContent = JSON.stringify(existing, null, 2)
-      } catch {
-        mergedContent = newContent
-      }
+      mergedContent = this.mergeJsonChangelog(existingContent, newContent, updateMode)
     } else {
       // HTML 格式：不支持合并，直接覆盖
       mergedContent = newContent
     }
 
     await writeFileContent(path, mergedContent)
+  }
+
+  /**
+   * 合并 Markdown Changelog
+   */
+  private mergeMarkdownChangelog(
+    existing: string,
+    newContent: string,
+    mode: 'prepend' | 'append'
+  ): string {
+    // 提取标题
+    const headerMatch = existing.match(/^#\s+.+\n+/)
+    const header = headerMatch ? headerMatch[0] : ''
+    const existingBody = headerMatch ? existing.substring(header.length) : existing
+
+    if (mode === 'prepend') {
+      // 添加到顶部
+      return header ? `${header}${newContent}\n\n${existingBody}` : `${newContent}\n\n${existingBody}`
+    } else {
+      // 添加到底部
+      return header ? `${header}${existingBody}\n\n${newContent}` : `${existingBody}\n\n${newContent}`
+    }
+  }
+
+  /**
+   * 合并 JSON Changelog
+   */
+  private mergeJsonChangelog(
+    existing: string,
+    newContent: string,
+    mode: 'prepend' | 'append'
+  ): string {
+    try {
+      const existingData = JSON.parse(existing)
+      const newData = JSON.parse(newContent)
+
+      if (!existingData.versions) {
+        existingData.versions = []
+      }
+
+      if (mode === 'prepend') {
+        existingData.versions.unshift(newData)
+      } else {
+        existingData.versions.push(newData)
+      }
+
+      const indent = this.config.formatOptions?.json?.indent || 2
+      return JSON.stringify(existingData, null, indent)
+    } catch {
+      return newContent
+    }
   }
 
   /**

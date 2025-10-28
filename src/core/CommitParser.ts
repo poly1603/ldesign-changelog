@@ -17,6 +17,15 @@ export interface CommitParserConfig {
 
   /** 仓库信息 */
   repositoryInfo?: RepositoryInfo
+
+  /** scope 过滤 */
+  scopeFilter?: string[]
+
+  /** 是否标记依赖更新 */
+  markDependencies?: boolean
+
+  /** 是否标记安全修复 */
+  markSecurity?: boolean
 }
 
 /**
@@ -98,6 +107,13 @@ export class CommitParser {
       return null
     }
 
+    // scope 过滤
+    if (this.config.scopeFilter && this.config.scopeFilter.length > 0) {
+      if (!scope || !this.config.scopeFilter.includes(scope)) {
+        return null
+      }
+    }
+
     // 提取 PR 编号
     const pr = this.extractPR(subject)
 
@@ -114,6 +130,12 @@ export class CommitParser {
       ? issues.map(issue => generateIssueLink(issue, this.config.repositoryInfo!))
       : undefined
     const commitLink = this.config.repositoryInfo ? generateCommitLink(commit.hash, this.config.repositoryInfo) : undefined
+
+    // 检测是否为依赖更新
+    const isDependency = this.config.markDependencies ? this.isDependencyUpdate(scope, subject) : undefined
+
+    // 检测是否为安全修复
+    const isSecurity = this.config.markSecurity ? this.isSecurityFix(scope, subject, commit.body) : undefined
 
     return {
       hash: commit.hash,
@@ -134,6 +156,8 @@ export class CommitParser {
       breakingDescription,
       date: commit.date,
       commitLink,
+      isDependency,
+      isSecurity,
     }
   }
 
@@ -187,6 +211,28 @@ export class CommitParser {
       }
     }
     return undefined
+  }
+
+  /**
+   * 判断是否为依赖更新
+   */
+  private isDependencyUpdate(scope?: string, subject?: string): boolean {
+    const depKeywords = ['deps', 'dependencies', 'dep', 'dependency', 'package']
+    const scopeMatch = scope && depKeywords.some(kw => scope.toLowerCase().includes(kw))
+    const subjectMatch = subject && (
+      subject.toLowerCase().includes('bump') ||
+      subject.toLowerCase().includes('update') && depKeywords.some(kw => subject.toLowerCase().includes(kw))
+    )
+    return !!(scopeMatch || subjectMatch)
+  }
+
+  /**
+   * 判断是否为安全修复
+   */
+  private isSecurityFix(scope?: string, subject?: string, body?: string): boolean {
+    const securityKeywords = ['security', 'vulnerability', 'cve', 'xss', 'csrf', 'injection', 'exploit']
+    const text = `${scope || ''} ${subject || ''} ${body || ''}`.toLowerCase()
+    return securityKeywords.some(kw => text.includes(kw))
   }
 
   /**
