@@ -21,11 +21,6 @@ export class JsonFormatter {
 
   constructor(config: JsonFormatterConfig = {}) {
     this.config = {
-      options: {
-        pretty: true,
-        indent: 2,
-        includeMetadata: true,
-      },
       ...config,
       options: {
         pretty: true,
@@ -53,12 +48,12 @@ export class JsonFormatter {
    * 格式化完整 Changelog
    */
   formatComplete(contents: ChangelogContent[]): string {
-    const data = {
+    const data: any = {
       versions: contents.map(c => this.prepareData(c)),
     }
 
     if (this.config.options.includeMetadata) {
-      data['metadata'] = {
+      data.metadata = {
         generatedAt: new Date().toISOString(),
         totalVersions: contents.length,
         totalCommits: contents.reduce((sum, c) => sum + c.commits.length, 0),

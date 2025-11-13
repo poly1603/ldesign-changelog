@@ -109,8 +109,7 @@ async function interactiveSelectCommits(content: any): Promise<any> {
   )
 
   // 选择具体提交
-  const shouldSelectCommits = await confirm('
-是否需要选择具体的提交?', false)
+  const shouldSelectCommits = await confirm('是否需要选择具体的提交?', false)
 
   if (shouldSelectCommits) {
     for (const section of filteredSections) {

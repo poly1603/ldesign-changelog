@@ -5,58 +5,15 @@
 import { readFile } from 'fs/promises'
 import { basename } from 'path'
 import type { ChangelogContent } from '../types/changelog.js'
+import type { ReleaseData, ReleaseManagerConfig } from '../types/integrations.js'
 import { logger } from '../utils/logger.js'
 
 /**
  * GitHub Release 配置
  */
-export interface GitHubReleaseConfig {
-  /** GitHub Token */
-  token?: string
-
-  /** 仓库所有者 */
-  owner?: string
-
-  /** 仓库名称 */
-  repo?: string
-
-  /** 是否为预发布 */
-  prerelease?: boolean
-
-  /** 是否为草稿 */
-  draft?: boolean
-
-  /** Release 标题模板 */
-  titleTemplate?: string
-
-  /** 要上传的资源文件 */
-  assets?: string[]
-
+export interface GitHubReleaseConfig extends ReleaseManagerConfig {
   /** 是否生成发布说明 */
   generateReleaseNotes?: boolean
-}
-
-/**
- * Release 数据
- */
-export interface ReleaseData {
-  /** 标签名 */
-  tagName: string
-
-  /** Release 名称 */
-  name: string
-
-  /** Release 内容 */
-  body: string
-
-  /** 是否为预发布 */
-  prerelease: boolean
-
-  /** 是否为草稿 */
-  draft: boolean
-
-  /** 资源文件路径 */
-  assets?: string[]
 }
 
 /**
@@ -80,6 +37,7 @@ export class GitHubReleaseManager {
       titleTemplate: config.titleTemplate || 'Release {{version}}',
       assets: config.assets,
       generateReleaseNotes: config.generateReleaseNotes || false,
+      baseUrl: config.baseUrl || 'https://api.github.com',
     }
   }
 
@@ -145,6 +103,41 @@ export class GitHubReleaseManager {
       logger.error('更新 GitHub Release 失败', error)
       throw error
     }
+  }
+
+  /**
+   * 删除 Release
+   */
+  async deleteRelease(tagName: string): Promise<void> {
+    this.validateConfig()
+
+    logger.info(`正在删除 GitHub Release: ${tagName}`)
+
+    try {
+      const release = await this.getReleaseByTag(tagName)
+      
+      if (!release) {
+        throw new Error(`未找到 tag ${tagName} 的 Release`)
+      }
+
+      await this.callGitHubAPI(
+        'DELETE',
+        `/repos/{owner}/{repo}/releases/${release.id}`
+      )
+      
+      logger.success('GitHub Release 删除成功')
+    } catch (error: any) {
+      logger.error('删除 GitHub Release 失败', error)
+      throw error
+    }
+  }
+
+  /**
+   * 获取 Release
+   */
+  async getRelease(tagName: string): Promise<any> {
+    this.validateConfig()
+    return await this.getReleaseByTag(tagName)
   }
 
   /**
@@ -268,7 +261,7 @@ export class GitHubReleaseManager {
         
         logger.success(`${fileName} 上传成功`)
       } catch (error) {
-        logger.error(`上传资源失败: ${assetPath}`, error)
+        logger.error(`上传资源失败: ${assetPath}`, error as Error)
       }
     }
   }
@@ -311,7 +304,7 @@ export class GitHubReleaseManager {
     })
 
     if (!response.ok) {
-      const error = await response.json()
+      const error: any = await response.json()
       throw new Error(`GitHub API 错误: ${error.message || response.statusText}`)
     }
 
@@ -367,11 +360,3 @@ export class GitHubReleaseManager {
   }
 }
 
-/**
- * 创建 GitHub Release 管理器
- */
-export function createGitHubReleaseManager(
-  config?: GitHubReleaseConfig
-): GitHubReleaseManager {
-  return new GitHubReleaseManager(config)
-}

@@ -149,7 +149,7 @@ export class TemplateEngine {
       /**
        * 循环
        */
-      each: (array: any[], fn: Function) => {
+      each: (array: any[], fn: (value: any, index: number, array: any[]) => any) => {
         return array.map(fn).join('')
       },
     }

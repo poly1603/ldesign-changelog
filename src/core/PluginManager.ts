@@ -147,7 +147,7 @@ export class PluginManager {
           // @ts-ignore
           result = await Promise.resolve(hook(result, ...args.slice(1)))
         } catch (error) {
-          logger.error(`插件 ${plugin.name} 的钩子 ${hookName} 执行失败`, error)
+          logger.error(`插件 ${plugin.name} 的钩子 ${hookName} 执行失败`, error as Error)
         }
       }
     }
@@ -178,7 +178,7 @@ export class PluginManager {
         try {
           await plugin.destroy()
         } catch (error) {
-          logger.error(`插件 ${plugin.name} 销毁失败`, error)
+          logger.error(`插件 ${plugin.name} 销毁失败`, error as Error)
         }
       }
     }

@@ -21,7 +21,8 @@ import {
 } from '../../utils/git-utils.js'
 import { logger } from '../../utils/logger.js'
 import { loadConfig } from '../config-loader.js'
-import { createGitHubReleaseManager, GitHubReleaseManager } from '../../integrations/GitHubReleaseManager.js'
+import { createGitHubReleaseManager } from '../../integrations/ReleaseManagerFactory.js'
+import { GitHubReleaseManager } from '../../integrations/GitHubReleaseManager.js'
 
 /**
  * 创建 release 命令

@@ -4,6 +4,7 @@
 
 import { execa } from 'execa'
 import type { GitCommit, RepositoryInfo } from '../types/index.js'
+import { getGlobalCacheManager } from './git-cache.js'
 
 /**
  * Git 工具配置
@@ -11,6 +12,9 @@ import type { GitCommit, RepositoryInfo } from '../types/index.js'
 export interface GitUtilsConfig {
   /** 工作目录 */
   cwd?: string
+
+  /** 是否启用缓存 */
+  enableCache?: boolean
 }
 
 /**
@@ -28,7 +32,21 @@ async function execGit(args: string[], cwd?: string): Promise<string> {
 /**
  * 获取 Git 提交历史
  */
-export async function getGitCommits(from?: string, to = 'HEAD', cwd?: string): Promise<GitCommit[]> {
+export async function getGitCommits(
+  from?: string,
+  to = 'HEAD',
+  cwd?: string,
+  config?: GitUtilsConfig
+): Promise<GitCommit[]> {
+  // 尝试从缓存获取
+  if (config?.enableCache !== false) {
+    const cacheManager = getGlobalCacheManager()
+    const cached = await cacheManager.get<GitCommit[]>('git:commits', { from, to, cwd })
+    if (cached) {
+      return cached
+    }
+  }
+
   const range = from ? `${from}..${to}` : to
   const format = '%H%n%h%n%s%n%b%n%an%n%ae%n%ai%n%at%n%D%n---END---'
 
@@ -77,6 +95,12 @@ export async function getGitCommits(from?: string, to = 'HEAD', cwd?: string): P
       timestamp,
       tags: tags.length > 0 ? tags : undefined,
     })
+  }
+
+  // 保存到缓存
+  if (config?.enableCache !== false) {
+    const cacheManager = getGlobalCacheManager()
+    await cacheManager.set('git:commits', { from, to, cwd }, commits)
   }
 
   return commits

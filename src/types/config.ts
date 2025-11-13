@@ -226,6 +226,13 @@ export const DEFAULT_CONFIG: Required<Omit<ChangelogConfig, 'template' | 'reposi
   updateMode: 'prepend',
   keepHistory: true,
   versionFormat: 'v{version}',
+  scopeFilter: [],
+  groupByAuthor: false,
+  separateDependencies: false,
+  highlightSecurity: false,
+  monorepo: {
+    enabled: false,
+  },
 }
 
 /**

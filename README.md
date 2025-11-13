@@ -1,32 +1,41 @@
 # @ldesign/changelog
 
-> 📝 自动化的版本管理工具，让变更日志维护变得轻松
+<p align="center">
+  <img src="https://img.shields.io/npm/v/@ldesign/changelog.svg" alt="npm version">
+  <img src="https://img.shields.io/npm/l/@ldesign/changelog.svg" alt="license">
+  <img src="https://img.shields.io/npm/dm/@ldesign/changelog.svg" alt="downloads">
+  <img src="https://img.shields.io/node/v/@ldesign/changelog.svg" alt="node version">
+</p>
 
-[![npm version](https://img.shields.io/npm/v/@ldesign/changelog.svg)](https://www.npmjs.com/package/@ldesign/changelog)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+📝 自动化的版本管理工具，让变更日志维护变得轻松。支持多格式输出、自定义模板、统计分析、AI 增强等功能。
 
 ## ✨ 特性
 
-- 📝 **自动生成** - 基于 Conventional Commits 规范自动生成 CHANGELOG
-- 📌 **版本管理** - 智能版本号递增和 Git tag 创建
-- 📑 **多格式输出** - 支持 Markdown、JSON、HTML 三种格式
-- 🎨 **模板定制** - 基于 EJS 的灵活模板系统
-- 🔗 **智能关联** - 自动识别并链接 Issue 和 PR
-- 📊 **统计分析** - 详细的提交统计和贡献者分析
-- 🌍 **多语言支持** - 支持中文、英文、日文
-- 🤖 **CI/CD 就绪** - 易于集成到自动化发布流程
+- 🎯 **Conventional Commits** - 完整支持约定式提交规范
+- 📊 **统计分析** - 详细的提交统计、贡献者分析、频率分析
+- 🎨 **多格式输出** - 支持 Markdown、JSON、HTML 格式
+- 🔧 **高度可配置** - 灵活的配置选项和自定义模板
+- 🤖 **AI 增强** - 使用 LLM 优化提交信息和生成摘要
+- 🔌 **插件系统** - 扩展功能的插件机制
+- 📦 **Monorepo 支持** - 完美支持多包仓库
+- 🌐 **多平台集成** - GitHub、GitLab、Gitee Release 管理
+- 🔔 **通知集成** - Slack、Discord、Teams Webhook 通知
+- 🌍 **国际化** - 支持中文、英文、日文
 
 ## 📦 安装
 
 ```bash
-# 使用 npm
-npm install @ldesign/changelog --save-dev
-
 # 使用 pnpm
 pnpm add -D @ldesign/changelog
 
+# 使用 npm
+npm install -D @ldesign/changelog
+
 # 使用 yarn
 yarn add -D @ldesign/changelog
+
+# 全局安装
+npm install -g @ldesign/changelog
 ```
 
 ## 🚀 快速开始
@@ -34,134 +43,296 @@ yarn add -D @ldesign/changelog
 ### 1. 初始化配置
 
 ```bash
-npx ldesign-changelog init
-```
+# 创建默认配置文件
+ldesign-changelog init
 
-这将在项目根目录生成 `changelog.config.js` 配置文件。
+# 或使用短命令
+ld-changelog init
+```
 
 ### 2. 生成 Changelog
 
 ```bash
-# 生成最新版本的 changelog
-npx ldesign-changelog generate --version 1.0.0
+# 生成最新版本的 Changelog
+ldesign-changelog generate
 
 # 指定版本范围
-npx ldesign-changelog generate --from v0.9.0 --to HEAD
+ldesign-changelog generate --from v1.0.0 --to HEAD
 
-# 输出到不同文件
-npx ldesign-changelog generate --output HISTORY.md
-
-# 生成 HTML 格式
-npx ldesign-changelog generate --format html
+# 生成特定版本
+ldesign-changelog generate --version 2.0.0
 ```
 
 ### 3. 发布新版本
 
 ```bash
-# 自动递增 patch 版本并生成 changelog
-npx ldesign-changelog release
+# 发布新的 patch 版本
+ldesign-changelog release --type patch
 
-# 递增 minor 版本
-npx ldesign-changelog release --type minor
+# 发布新的 minor 版本并创建 GitHub Release
+ldesign-changelog release --type minor --github-release
 
-# 递增 major 版本
-npx ldesign-changelog release --type major
-
-# 创建预发布版本
-npx ldesign-changelog release --type prerelease --preid alpha
-
-# 发布并创建 Git tag
-npx ldesign-changelog release --tag --push
+# 发布 major 版本并推送 tag
+ldesign-changelog release --type major --tag --push
 ```
 
-### 4. 查看统计信息
+## 📖 CLI 命令
+
+### `generate` - 生成 Changelog
+
+生成版本变更日志。
 
 ```bash
-# 显示提交统计
-npx ldesign-changelog stats
+ldesign-changelog generate [options]
 
-# 指定版本范围
-npx ldesign-changelog stats --from v1.0.0 --to v2.0.0
-
-# 输出为 JSON
-npx ldesign-changelog stats --format json
+选项：
+  --version <version>     指定版本号
+  --from <ref>           起始 Git 引用（tag/branch/commit）
+  --to <ref>             结束 Git 引用（默认：HEAD）
+  --output <file>        输出文件路径（默认：CHANGELOG.md）
+  --format <type>        输出格式：markdown|json|html（默认：markdown）
+  --config <file>        配置文件路径
+  --regenerate           重新生成完整 Changelog
+  --preset <name>        使用预设配置
 ```
 
-## ⚙️ 配置
+**示例：**
 
-创建 `changelog.config.js`：
+```bash
+# 生成 v2.0.0 的 Changelog
+ldesign-changelog generate --version 2.0.0 --from v1.0.0 --to HEAD
+
+# 生成 JSON 格式
+ldesign-changelog generate --format json --output CHANGELOG.json
+
+# 重新生成完整历史
+ldesign-changelog generate --regenerate
+```
+
+### `release` - 发布新版本
+
+自动化发布流程：更新版本号、生成 Changelog、创建 Git tag。
+
+```bash
+ldesign-changelog release [options]
+
+选项：
+  --type <type>          版本类型：major|minor|patch|premajor|preminor|prepatch|prerelease
+  --version <version>    指定版本号（覆盖自动递增）
+  --preid <identifier>   预发布标识符：alpha|beta|rc
+  --tag                  创建 Git tag
+  --push                 推送 tag 到远程
+  --remote <remote>      远程仓库名（默认：origin）
+  --skip-changelog       跳过 Changelog 生成
+  --force                强制执行（跳过工作区检查）
+  --github-release       创建 GitHub Release
+  --prerelease           标记为预发布版本
+  --draft                创建为草稿
+  --assets <files...>    要上传的资源文件
+```
+
+**示例：**
+
+```bash
+# 发布 patch 版本
+ldesign-changelog release --type patch --tag --push
+
+# 发布 beta 版本
+ldesign-changelog release --type prerelease --preid beta
+
+# 发布并创建 GitHub Release
+ldesign-changelog release --type minor --github-release --assets dist.zip
+```
+
+### `stats` - 统计分析
+
+显示项目的提交统计信息。
+
+```bash
+ldesign-changelog stats [options]
+
+选项：
+  --from <ref>           起始引用
+  --to <ref>             结束引用（默认：HEAD）
+  --format <type>        输出格式：table|json|chart
+  --output <file>        导出统计报告
+```
+
+**示例：**
+
+```bash
+# 显示统计信息
+ldesign-changelog stats
+
+# 生成统计报告
+ldesign-changelog stats --format json --output stats.json
+```
+
+### `init` - 初始化配置
+
+创建默认配置文件。
+
+```bash
+ldesign-changelog init [options]
+
+选项：
+  --preset <name>        使用预设：conventional|angular|atom|ember
+  --force                强制覆盖现有配置
+```
+
+### `validate` - 验证提交信息
+
+验证提交信息是否符合规范。
+
+```bash
+ldesign-changelog validate [options]
+
+选项：
+  --from <ref>           起始引用
+  --to <ref>             结束引用（默认：HEAD）
+  --strict               严格模式
+```
+
+### `lint` - 检查提交信息
+
+检查提交信息的格式和质量。
+
+```bash
+ldesign-changelog lint [options]
+
+选项：
+  --from <ref>           起始引用
+  --to <ref>             结束引用（默认：HEAD）
+  --fix                  自动修复可修复的问题
+```
+
+### `preview` - 预览 Changelog
+
+预览生成的 Changelog 而不写入文件。
+
+```bash
+ldesign-changelog preview [options]
+
+选项：
+  --from <ref>           起始引用
+  --to <ref>             结束引用
+  --format <type>        输出格式
+```
+
+### `diff` - 对比版本差异
+
+对比两个版本之间的差异。
+
+```bash
+ldesign-changelog diff <from> <to> [options]
+
+选项：
+  --format <type>        输出格式
+  --detailed             显示详细差异
+```
+
+## 🔧 配置文件
+
+在项目根目录创建 `.changelogrc.json` 或 `changelog.config.js`：
+
+### JSON 配置示例
+
+```json
+{
+  "output": "CHANGELOG.md",
+  "format": "markdown",
+  "language": "zh-CN",
+  "types": [
+    { "type": "feat", "section": "✨ 新功能", "priority": 1 },
+    { "type": "fix", "section": "🐛 Bug 修复", "priority": 2 },
+    { "type": "perf", "section": "⚡ 性能优化", "priority": 3 },
+    { "type": "refactor", "section": "♻️ 代码重构", "priority": 4 },
+    { "type": "docs", "section": "📝 文档更新", "priority": 5 },
+    { "type": "style", "section": "💄 代码样式", "hidden": true },
+    { "type": "test", "section": "✅ 测试", "hidden": true },
+    { "type": "build", "section": "📦 构建系统", "priority": 8 },
+    { "type": "ci", "section": "👷 CI/CD", "hidden": true },
+    { "type": "chore", "section": "🔧 其他", "priority": 10 }
+  ],
+  "groupByType": true,
+  "includeAuthors": true,
+  "includePRLinks": true,
+  "includeCommitHash": true,
+  "dateFormat": "YYYY-MM-DD",
+  "headerFormat": "## [{version}] - {date}",
+  "repositoryUrl": "https://github.com/ldesign/tools",
+  "updateMode": "prepend",
+  "keepHistory": true,
+  "formatOptions": {
+    "markdown": {
+      "generateToc": true,
+      "headingLevel": 2,
+      "useEmoji": true
+    },
+    "json": {
+      "pretty": true,
+      "indent": 2,
+      "includeMetadata": true
+    },
+    "html": {
+      "title": "Changelog",
+      "includeStyles": true,
+      "includeSearch": true,
+      "theme": "light"
+    }
+  }
+}
+```
+
+### JavaScript 配置示例
 
 ```javascript
-module.exports = {
-  // 输出文件路径
+// changelog.config.js
+export default {
   output: 'CHANGELOG.md',
-
-  // 输出格式 (markdown | json | html)
   format: 'markdown',
-
-  // 提交类型配置
+  language: 'zh-CN',
+  
+  // 自定义类型配置
   types: [
     { type: 'feat', section: '✨ 新功能', priority: 1 },
     { type: 'fix', section: '🐛 Bug 修复', priority: 2 },
-    { type: 'perf', section: '⚡ 性能优化', priority: 3 },
-    { type: 'refactor', section: '♻️ 代码重构', priority: 4 },
-    { type: 'docs', section: '📝 文档更新', priority: 5 },
-    { type: 'style', section: '💄 代码样式', priority: 6 },
-    { type: 'test', section: '✅ 测试', priority: 7 },
-    { type: 'build', section: '📦 构建系统', priority: 8 },
-    { type: 'ci', section: '👷 CI/CD', priority: 9 },
-    { type: 'chore', section: '🔧 其他', priority: 10, hidden: true },
+    // ...
   ],
-
-  // 是否按类型分组
-  groupByType: true,
-
-  // 是否包含作者信息
-  includeAuthors: true,
-
-  // 是否包含 PR 链接
-  includePRLinks: true,
-
-  // 是否包含 commit hash
-  includeCommitHash: true,
-
-  // 日期格式
-  dateFormat: 'YYYY-MM-DD',
-
-  // 语言 (zh-CN | en-US | ja-JP)
-  language: 'zh-CN',
-
-  // 标题格式
-  headerFormat: '## [{version}] - {date}',
-
-  // 版本号格式
-  versionFormat: 'v{version}',
-
-  // 格式选项
-  formatOptions: {
-    markdown: {
-      generateToc: false,
-      headingLevel: 2,
-      useEmoji: true,
-    },
-    json: {
-      pretty: true,
-      indent: 2,
-      includeMetadata: true,
-    },
-    html: {
-      title: 'Changelog',
-      includeStyles: true,
-      includeSearch: true,
-      theme: 'light',
-    },
+  
+  // 自定义模板
+  template: './templates/changelog.ejs',
+  
+  // AI 增强配置
+  ai: {
+    enabled: true,
+    provider: 'openai',
+    apiKey: process.env.OPENAI_API_KEY,
+    model: 'gpt-3.5-turbo',
+    enhanceCommits: true,
+    generateSummary: true,
+  },
+  
+  // 插件配置
+  plugins: [
+    ['@ldesign/changelog-plugin-jira', {
+      host: 'https://jira.example.com',
+      projectKey: 'PROJ',
+    }],
+  ],
+  
+  // Monorepo 配置
+  monorepo: {
+    enabled: true,
+    packages: ['packages/*'],
+    tagPrefix: '@scope/package-name@',
   },
 }
 ```
 
-## 📚 使用示例
+## 📚 API 使用
 
-### 程序化使用
+### 基础使用
 
 ```typescript
 import { createChangelogGenerator } from '@ldesign/changelog'
@@ -170,39 +341,306 @@ import { createChangelogGenerator } from '@ldesign/changelog'
 const generator = createChangelogGenerator({
   output: 'CHANGELOG.md',
   format: 'markdown',
-  includeAuthors: true,
 })
 
 // 生成 Changelog
-const content = await generator.generate('1.0.0', 'v0.9.0', 'HEAD')
+const content = await generator.generate('2.0.0', 'v1.0.0', 'HEAD')
 
 // 写入文件
 await generator.write(content)
-
-// 或者一步到位
-await generator.generateAndWrite('1.0.0', 'v0.9.0', 'HEAD')
 ```
+
+### 使用不同格式化器
+
+```typescript
+import {
+  createMarkdownFormatter,
+  createJsonFormatter,
+  createHtmlFormatter,
+} from '@ldesign/changelog/formatters'
+
+// Markdown 格式
+const mdFormatter = createMarkdownFormatter({
+  includeAuthors: true,
+  includePRLinks: true,
+})
+const markdown = mdFormatter.format(content)
+
+// JSON 格式
+const jsonFormatter = createJsonFormatter({
+  pretty: true,
+  indent: 2,
+})
+const json = jsonFormatter.format(content)
+
+// HTML 格式
+const htmlFormatter = createHtmlFormatter({
+  title: 'Project Changelog',
+  theme: 'dark',
+})
+const html = htmlFormatter.format(content)
+```
+
+### 统计分析
+
+```typescript
+import { createStatsAnalyzer } from '@ldesign/changelog/core'
+
+const analyzer = createStatsAnalyzer()
+const stats = analyzer.analyze(commits)
+
+console.log(`总提交数: ${stats.totalCommits}`)
+console.log(`贡献者: ${stats.contributors.length}`)
+console.log(`平均每天提交: ${stats.frequency.commitsPerDay}`)
+```
+
+### 提交验证
+
+```typescript
+import { createCommitLinter } from '@ldesign/changelog/core'
+
+const linter = createCommitLinter({
+  types: ['feat', 'fix', 'docs'],
+  scopes: ['core', 'ui', 'api'],
+})
+
+const result = linter.lint(commits)
+
+if (!result.valid) {
+  console.error('发现无效的提交:')
+  result.errors.forEach(error => {
+    console.error(`- ${error.commit.hash}: ${error.message}`)
+  })
+}
+```
+
+### AI 增强
+
+```typescript
+import { createAIEnhancer } from '@ldesign/changelog/core'
+
+const enhancer = createAIEnhancer({
+  provider: 'openai',
+  apiKey: process.env.OPENAI_API_KEY,
+  model: 'gpt-4',
+})
+
+// 增强提交信息
+const enhancedCommits = await enhancer.enhanceCommits(commits)
+
+// 生成摘要
+const summary = await enhancer.generateSummary(content)
+
+// 生成亮点
+const highlights = await enhancer.generateHighlights(content)
+
+// 生成迁移指南
+const migration = await enhancer.generateMigration(content)
+```
+
+### 插件系统
+
+```typescript
+import { createPluginManager, createPlugin } from '@ldesign/changelog/core'
+
+// 创建自定义插件
+const myPlugin = createPlugin('my-plugin', {
+  beforeGenerate: async (config) => {
+    console.log('生成前处理')
+    return config
+  },
+  afterGenerate: async (content) => {
+    console.log('生成后处理')
+    return content
+  },
+})
+
+// 使用插件
+const manager = createPluginManager()
+manager.register(myPlugin)
+
+// 执行钩子
+const result = await manager.executeHook('afterGenerate', content)
+```
+
+### Release 管理
+
+```typescript
+import { createReleaseManager } from '@ldesign/changelog'
+
+// 自动检测平台
+const manager = await createReleaseManager({
+  token: process.env.GITHUB_TOKEN,
+})
+
+// 创建 Release
+await manager.createRelease('2.0.0', changelog, {
+  prerelease: false,
+  draft: false,
+  assets: ['dist.zip'],
+})
+
+// 更新 Release
+await manager.updateRelease('v2.0.0', changelog)
+
+// 删除 Release
+await manager.deleteRelease('v2.0.0')
+```
+
+### Webhook 通知
+
+```typescript
+import { createWebhookNotifier } from '@ldesign/changelog'
+
+const notifier = createWebhookNotifier({
+  enabled: true,
+  slack: {
+    url: process.env.SLACK_WEBHOOK_URL,
+    channel: '#releases',
+    username: 'Changelog Bot',
+  },
+  discord: {
+    url: process.env.DISCORD_WEBHOOK_URL,
+  },
+})
+
+// 发送通知
+await notifier.notify({
+  event: 'release',
+  version: '2.0.0',
+  changelog: content,
+})
+```
+
+## 🎨 输出格式
+
+### Markdown 输出
+
+```markdown
+## [2.0.0] - 2024-01-15
+
+**Full Changelog**: https://github.com/user/repo/compare/v1.0.0...v2.0.0
+
+### 💥 Breaking Changes
+
+- 重构了核心 API，请参考迁移指南
+
+### ✨ 新功能
+
+- **core**: 添加了插件系统支持 ([#123](https://github.com/user/repo/pull/123)) ([abc1234](https://github.com/user/repo/commit/abc1234)) - @username
+- **ui**: 新增暗色主题 ([#124](https://github.com/user/repo/pull/124))
+
+### 🐛 Bug 修复
+
+- **api**: 修复了分页问题 ([#125](https://github.com/user/repo/pull/125))
+
+### 👥 Contributors
+
+@user1, @user2, @user3
+
+### 📊 Statistics
+
+- Total Commits: **45**
+- Contributors: **8**
+- Pull Requests: **12**
+- Issues Closed: **15**
+```
+
+### JSON 输出
+
+```json
+{
+  "version": "2.0.0",
+  "date": "2024-01-15",
+  "sections": [
+    {
+      "title": "✨ 新功能",
+      "type": "feat",
+      "commits": [...]
+    }
+  ],
+  "breakingChanges": [...],
+  "contributors": [...],
+  "stats": {
+    "totalCommits": 45,
+    "contributorCount": 8,
+    "prCount": 12,
+    "issueCount": 15
+  },
+  "compareUrl": "https://github.com/user/repo/compare/v1.0.0...v2.0.0"
+}
+```
+
+### HTML 输出
+
+生成美观的交互式 HTML 页面，包含：
+- 搜索功能
+- 响应式设计
+- 暗色/亮色主题
+- 统计图表
+
+## 🔥 高级功能
 
 ### 自定义模板
 
-创建 `custom-template.ejs`：
+使用 EJS 模板自定义输出格式：
 
 ```ejs
-## <%= version %> - <%= date %>
+<!-- templates/custom.ejs -->
+# <%= version %> (<%= date %>)
 
-<% sections.forEach(function(section) { %>
-### <%= section.title %>
+<% if (breakingChanges && breakingChanges.length > 0) { %>
+## ⚠️ BREAKING CHANGES
+<% breakingChanges.forEach(change => { %>
+- <%= change.description %>
+<% }) %>
+<% } %>
 
-<% section.commits.forEach(function(commit) { %>
-- <%= commit.subject %> (<%= commit.author.name %>)
+<% sections.forEach(section => { %>
+## <%= section.title %>
+<% section.commits.forEach(commit => { %>
+- <%= commit.subject %> <%= commit.author.name %>
 <% }) %>
 <% }) %>
 ```
 
-使用自定义模板：
+使用模板：
 
-```bash
-npx ldesign-changelog generate --template custom-template.ejs
+```javascript
+const generator = createChangelogGenerator({
+  template: './templates/custom.ejs',
+})
+```
+
+### Monorepo 支持
+
+为多包仓库生成独立的 Changelog：
+
+```json
+{
+  "monorepo": {
+    "enabled": true,
+    "packages": [
+      "packages/core",
+      "packages/ui",
+      "packages/utils"
+    ],
+    "tagPrefix": "@scope/",
+    "mergeChangelogs": false,
+    "outputPattern": "{package}/CHANGELOG.md"
+  }
+}
+```
+
+### 过滤和分组
+
+```json
+{
+  "scopeFilter": ["core", "ui"],
+  "groupByAuthor": true,
+  "separateDependencies": true,
+  "highlightSecurity": true
+}
 ```
 
 ### CI/CD 集成
@@ -214,8 +652,7 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [main]
 
 jobs:
   release:
@@ -225,84 +662,38 @@ jobs:
         with:
           fetch-depth: 0
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
+      - uses: pnpm/action-setup@v2
       
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install
       
       - name: Generate Changelog
-        run: npx ldesign-changelog generate --version ${{ github.ref_name }}
+        run: pnpm ldesign-changelog generate
       
       - name: Create Release
-        uses: actions/create-release@v1
+        run: |
+          pnpm ldesign-changelog release \
+            --type minor \
+            --tag \
+            --push \
+            --github-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body_path: CHANGELOG.md
 ```
 
-## 📖 API 文档
+#### GitLab CI
 
-### ChangelogGenerator
-
-主要的 Changelog 生成器类。
-
-```typescript
-class ChangelogGenerator {
-  constructor(config?: ChangelogConfig)
-  
-  // 生成 Changelog 内容
-  async generate(version: string, from?: string, to?: string): Promise<ChangelogContent>
-  
-  // 格式化 Changelog
-  format(content: ChangelogContent, format?: 'markdown' | 'json' | 'html'): string
-  
-  // 写入文件
-  async write(content: ChangelogContent): Promise<void>
-  
-  // 生成并写入
-  async generateAndWrite(version: string, from?: string, to?: string): Promise<void>
-}
-```
-
-### CommitParser
-
-提交解析器，解析 Conventional Commits。
-
-```typescript
-class CommitParser {
-  constructor(config?: CommitParserConfig)
-  
-  // 解析提交列表
-  parse(commits: GitCommit[]): ChangelogCommit[]
-  
-  // 解析单个提交
-  parseCommit(commit: GitCommit): ChangelogCommit | null
-  
-  // 按类型分组
-  groupByType(commits: ChangelogCommit[]): Map<string, ChangelogCommit[]>
-  
-  // 提取 Breaking Changes
-  extractBreakingChanges(commits: ChangelogCommit[]): ChangelogCommit[]
-}
-```
-
-### StatsAnalyzer
-
-统计分析器，分析提交数据。
-
-```typescript
-class StatsAnalyzer {
-  constructor(options?: StatsAnalysisOptions)
-  
-  // 分析提交统计
-  analyze(commits: ChangelogCommit[]): StatsAnalysisResult
-}
+```yaml
+release:
+  stage: deploy
+  only:
+    - main
+  script:
+    - pnpm install
+    - pnpm ldesign-changelog generate
+    - pnpm ldesign-changelog release --type patch --tag --push
+  environment:
+    name: production
 ```
 
 ## 🎯 最佳实践
@@ -342,57 +733,48 @@ BREAKING CHANGE: The auth endpoint has been changed from /auth to /api/auth"
 ```bash
 # 发布工作流
 npm version patch
-npx ldesign-changelog release --tag --push
+ldesign-changelog release --tag --push
 git push && git push --tags
-```
-
-## 🔧 故障排查
-
-### 问题：无法获取 Git 提交
-
-**解决方案**：确保在 Git 仓库中运行命令，并且有提交历史。
-
-### 问题：生成的 Changelog 为空
-
-**解决方案**：
-1. 确保提交消息遵循 Conventional Commits 规范
-2. 或者启用 `includeAllCommits: true` 包含所有提交
-
-### 问题：链接无法生成
-
-**解决方案**：确保已配置远程仓库 URL：
-
-```bash
-git remote -v
-```
-
-或在配置中手动指定：
-
-```javascript
-module.exports = {
-  repositoryUrl: 'https://github.com/username/repo',
-}
 ```
 
 ## 🤝 贡献
 
-欢迎贡献！请遵循以下步骤：
+欢迎贡献！请查看 [CONTRIBUTING.md](./CONTRIBUTING.md) 了解详情。
 
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'feat: add some amazing feature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
+### 开发设置
+
+```bash
+# 克隆仓库
+git clone https://github.com/ldesign/tools.git
+cd tools/changelog
+
+# 安装依赖
+pnpm install
+
+# 开发模式
+pnpm dev
+
+# 运行测试
+pnpm test
+
+# 构建
+pnpm build
+```
 
 ## 📄 许可证
 
 [MIT](./LICENSE) © LDesign Team
 
-## 🔗 相关链接
+## 🙏 致谢
 
 - [Conventional Commits](https://www.conventionalcommits.org/)
-- [Semantic Versioning](https://semver.org/)
 - [Keep a Changelog](https://keepachangelog.com/)
+- [Semantic Versioning](https://semver.org/)
+
+## 📮 联系我们
+
+- 问题反馈：[GitHub Issues](https://github.com/ldesign/tools/issues)
+- 讨论交流：[GitHub Discussions](https://github.com/ldesign/tools/discussions)
 
 ---
 

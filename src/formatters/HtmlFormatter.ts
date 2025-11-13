@@ -33,12 +33,6 @@ export class HtmlFormatter {
       includeAuthors: true,
       includePRLinks: true,
       includeCommitHash: true,
-      options: {
-        title: 'Changelog',
-        includeStyles: true,
-        includeSearch: true,
-        theme: 'light',
-      },
       ...config,
       options: {
         title: 'Changelog',
@@ -95,7 +89,7 @@ export class HtmlFormatter {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${this.escapeHtml(this.config.options.title)}</title>
+  <title>${this.escapeHtml(this.config.options.title ?? 'Changelog')}</title>
   ${this.config.options.includeStyles ? this.generateStyles() : ''}
 </head>`
   }
@@ -290,7 +284,7 @@ export class HtmlFormatter {
    */
   private generateHeader(): string {
     return `<header>
-  <h1>${this.escapeHtml(this.config.options.title)}</h1>
+  <h1>${this.escapeHtml(this.config.options.title ?? 'Changelog')}</h1>
   <p>Project Changelog - Generated at ${new Date().toLocaleString()}</p>
 </header>`
   }

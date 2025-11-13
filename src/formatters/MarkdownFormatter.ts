@@ -37,11 +37,6 @@ export class MarkdownFormatter {
       includePRLinks: true,
       includeCommitHash: true,
       headerFormat: '## [{version}] - {date}',
-      options: {
-        generateToc: false,
-        headingLevel: 2,
-        useEmoji: true,
-      },
       ...config,
       options: {
         generateToc: false,
@@ -167,7 +162,7 @@ export class MarkdownFormatter {
    * 格式化标题
    */
   private formatHeading(text: string, level: number): string {
-    const actualLevel = this.config.options.headingLevel + level - 2
+    const actualLevel = (this.config.options.headingLevel ?? 2) + level - 2
     const prefix = '#'.repeat(Math.max(1, Math.min(6, actualLevel)))
     return `${prefix} ${text}`
   }

@@ -53,13 +53,21 @@ const BREAKING_MARKERS = ['BREAKING CHANGE:', 'BREAKING CHANGES:', 'BREAKING:']
  * Commit 解析器
  */
 export class CommitParser {
-  private config: Required<CommitParserConfig>
+  private config: Required<Omit<CommitParserConfig, 'repositoryInfo' | 'scopeFilter' | 'markDependencies' | 'markSecurity'>> & {
+    repositoryInfo?: RepositoryInfo
+    scopeFilter?: string[]
+    markDependencies?: boolean
+    markSecurity?: boolean
+  }
 
   constructor(config: CommitParserConfig = {}) {
     this.config = {
       includeAllCommits: false,
       hiddenTypes: [],
       repositoryInfo: undefined,
+      scopeFilter: undefined,
+      markDependencies: false,
+      markSecurity: false,
       ...config,
     }
   }

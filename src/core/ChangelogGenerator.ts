@@ -5,11 +5,12 @@
 import { join } from 'path'
 import type {
   ChangelogConfig,
-  DEFAULT_CONFIG,
 } from '../types/config.js'
+import { DEFAULT_CONFIG } from '../types/config.js'
 import type {
   ChangelogContent,
   ChangelogSection,
+  ChangelogCommit,
   BreakingChange,
   Contributor,
   RepositoryInfo,
