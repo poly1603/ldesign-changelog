@@ -2,9 +2,9 @@
  * 文件操作工具
  */
 
-import { readFile, writeFile, access, mkdir, copyFile } from 'fs/promises'
+import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
 import { existsSync } from 'fs'
-import { dirname, join, resolve, isAbsolute } from 'path'
+import { dirname } from 'path'
 
 /**
  * 读取文件内容
@@ -37,18 +37,6 @@ export function fileExists(filePath: string): boolean {
 }
 
 /**
- * 检查文件是否可访问
- */
-export async function isAccessible(filePath: string): Promise<boolean> {
-  try {
-    await access(filePath)
-    return true
-  } catch {
-    return false
-  }
-}
-
-/**
  * 确保目录存在
  */
 export async function ensureDir(dirPath: string): Promise<void> {
@@ -74,53 +62,4 @@ export async function backupFile(filePath: string): Promise<string> {
   return backupPath
 }
 
-/**
- * 恢复文件
- */
-export async function restoreFile(backupPath: string, targetPath: string): Promise<void> {
-  if (!fileExists(backupPath)) {
-    throw new Error(`备份文件不存在: ${backupPath}`)
-  }
-
-  await copyFile(backupPath, targetPath)
-}
-
-/**
- * 解析路径
- */
-export function resolvePath(path: string, cwd = process.cwd()): string {
-  return isAbsolute(path) ? path : resolve(cwd, path)
-}
-
-/**
- * 规范化路径
- */
-export function normalizePath(path: string): string {
-  return path.replace(/\\/g, '/')
-}
-
-/**
- * 获取文件名（不含扩展名）
- */
-export function getFilenameWithoutExt(filePath: string): string {
-  const parts = filePath.split('/')
-  const filename = parts[parts.length - 1]
-  const dotIndex = filename.lastIndexOf('.')
-  return dotIndex > 0 ? filename.substring(0, dotIndex) : filename
-}
-
-/**
- * 获取文件扩展名
- */
-export function getFileExtension(filePath: string): string {
-  const dotIndex = filePath.lastIndexOf('.')
-  return dotIndex > 0 ? filePath.substring(dotIndex + 1) : ''
-}
-
-/**
- * 连接路径
- */
-export function joinPath(...paths: string[]): string {
-  return normalizePath(join(...paths))
-}
 
