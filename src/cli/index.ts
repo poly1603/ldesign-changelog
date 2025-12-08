@@ -18,6 +18,7 @@ import { createValidateCommand } from './commands/validate.js'
 import { createLintCommand } from './commands/lint.js'
 import { createPreviewCommand } from './commands/preview.js'
 import { createDiffCommand } from './commands/diff.js'
+import { createUICommand } from './commands/ui.js'
 import { logger } from '../utils/logger.js'
 
 // 获取当前文件的目录
@@ -91,6 +92,7 @@ async function main(): Promise<void> {
   program.addCommand(createLintCommand())
   program.addCommand(createPreviewCommand())
   program.addCommand(createDiffCommand())
+  program.addCommand(createUICommand())
 
   // 解析命令行参数
   await program.parseAsync(process.argv)
