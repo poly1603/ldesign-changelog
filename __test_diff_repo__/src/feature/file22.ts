@@ -1,0 +1,10 @@
+export const value22 = 22;
+export const value22 = 22;
+export const value22 = 22;
+export const value22 = 22;
+export const value22 = 22;
+export const value22 = 22;
+export const value22 = 22;
+export const value22 = 22;
+export const value22 = 22;
+export const value22 = 22;

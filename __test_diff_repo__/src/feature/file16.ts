@@ -1,0 +1,10 @@
+export const value16 = 16;
+export const value16 = 16;
+export const value16 = 16;
+export const value16 = 16;
+export const value16 = 16;
+export const value16 = 16;
+export const value16 = 16;
+export const value16 = 16;
+export const value16 = 16;
+export const value16 = 16;

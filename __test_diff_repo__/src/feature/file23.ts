@@ -1,0 +1,10 @@
+export const value23 = 23;
+export const value23 = 23;
+export const value23 = 23;
+export const value23 = 23;
+export const value23 = 23;
+export const value23 = 23;
+export const value23 = 23;
+export const value23 = 23;
+export const value23 = 23;
+export const value23 = 23;

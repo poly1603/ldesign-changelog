@@ -1,0 +1,10 @@
+export const value25 = 25;
+export const value25 = 25;
+export const value25 = 25;
+export const value25 = 25;
+export const value25 = 25;
+export const value25 = 25;
+export const value25 = 25;
+export const value25 = 25;
+export const value25 = 25;
+export const value25 = 25;

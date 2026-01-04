@@ -1,0 +1,10 @@
+export const value45 = 45;
+export const value45 = 45;
+export const value45 = 45;
+export const value45 = 45;
+export const value45 = 45;
+export const value45 = 45;
+export const value45 = 45;
+export const value45 = 45;
+export const value45 = 45;
+export const value45 = 45;

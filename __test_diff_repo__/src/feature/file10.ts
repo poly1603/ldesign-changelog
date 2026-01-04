@@ -1,0 +1,10 @@
+export const value10 = 10;
+export const value10 = 10;
+export const value10 = 10;
+export const value10 = 10;
+export const value10 = 10;
+export const value10 = 10;
+export const value10 = 10;
+export const value10 = 10;
+export const value10 = 10;
+export const value10 = 10;

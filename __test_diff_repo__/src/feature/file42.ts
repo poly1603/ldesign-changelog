@@ -1,0 +1,10 @@
+export const value42 = 42;
+export const value42 = 42;
+export const value42 = 42;
+export const value42 = 42;
+export const value42 = 42;
+export const value42 = 42;
+export const value42 = 42;
+export const value42 = 42;
+export const value42 = 42;
+export const value42 = 42;

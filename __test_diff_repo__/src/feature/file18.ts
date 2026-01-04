@@ -1,0 +1,10 @@
+export const value18 = 18;
+export const value18 = 18;
+export const value18 = 18;
+export const value18 = 18;
+export const value18 = 18;
+export const value18 = 18;
+export const value18 = 18;
+export const value18 = 18;
+export const value18 = 18;
+export const value18 = 18;

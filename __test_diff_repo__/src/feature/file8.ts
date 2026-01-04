@@ -1,0 +1,10 @@
+export const value8 = 8;
+export const value8 = 8;
+export const value8 = 8;
+export const value8 = 8;
+export const value8 = 8;
+export const value8 = 8;
+export const value8 = 8;
+export const value8 = 8;
+export const value8 = 8;
+export const value8 = 8;
