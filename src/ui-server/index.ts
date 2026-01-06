@@ -156,20 +156,61 @@ registerRoute('GET', '/api/commits', async (req, res) => {
 })
 
 /**
- * 获取版本列表
+ * 获取版本列表（增强版，包含详细信息）
  */
 registerRoute('GET', '/api/releases', async (req, res) => {
   try {
     const tags = await getGitTags()
+    const repoInfo = await getRepositoryInfo().catch(() => null)
+    const parser = createCommitParser({
+      includeAllCommits: false,
+      repositoryInfo: repoInfo || undefined,
+    })
 
-    const releases = tags.slice(0, 10).map((tag, index) => ({
-      version: tag.replace(/^v/, ''),
-      date: new Date(Date.now() - 86400000 * (index * 7 + 1)).toISOString(),
-      status: 'published',
-      commits: Math.floor(Math.random() * 30) + 5,
-      breaking: Math.random() > 0.7,
-      highlights: [`版本 ${tag} 的更新内容`],
-    }))
+    const releases = []
+    for (let i = 0; i < Math.min(tags.length, 20); i++) {
+      const tag = tags[i]
+      const nextTag = tags[i + 1]
+
+      try {
+        const gitCommits = await getGitCommits(nextTag || undefined, tag)
+        const commits = parser.parse(gitCommits)
+
+        // 统计提交类型
+        const typeCount: Record<string, number> = {}
+        let breakingCount = 0
+
+        for (const commit of commits) {
+          typeCount[commit.type] = (typeCount[commit.type] || 0) + 1
+          if (commit.breaking) breakingCount++
+        }
+
+        releases.push({
+          version: tag.replace(/^v/, ''),
+          tag,
+          date: commits[0]?.date || new Date().toISOString(),
+          status: 'published',
+          commits: commits.length,
+          breaking: breakingCount > 0,
+          breakingCount,
+          typeCount,
+          highlights: commits.slice(0, 3).map(c => c.subject),
+        })
+      } catch (error) {
+        // 如果获取提交失败，使用基本信息
+        releases.push({
+          version: tag.replace(/^v/, ''),
+          tag,
+          date: new Date(Date.now() - 86400000 * (i * 7 + 1)).toISOString(),
+          status: 'published',
+          commits: 0,
+          breaking: false,
+          breakingCount: 0,
+          typeCount: {},
+          highlights: [],
+        })
+      }
+    }
 
     sendJSON(res, releases)
   } catch (error: any) {
@@ -215,6 +256,222 @@ registerRoute('GET', '/api/config', async (req, res) => {
   try {
     const config = await loadConfig()
     sendJSON(res, config)
+  } catch (error: any) {
+    sendError(res, error.message)
+  }
+})
+
+/**
+ * 获取时间线数据（用于交互式时间线）
+ */
+registerRoute('GET', '/api/timeline', async (req, res) => {
+  try {
+    const tags = await getGitTags()
+    const repoInfo = await getRepositoryInfo().catch(() => null)
+    const parser = createCommitParser({
+      includeAllCommits: false,
+      repositoryInfo: repoInfo || undefined,
+    })
+
+    const timeline = []
+    for (let i = 0; i < Math.min(tags.length, 50); i++) {
+      const tag = tags[i]
+      const nextTag = tags[i + 1]
+
+      try {
+        const gitCommits = await getGitCommits(nextTag || undefined, tag)
+        const commits = parser.parse(gitCommits)
+
+        timeline.push({
+          version: tag.replace(/^v/, ''),
+          tag,
+          date: commits[0]?.date || new Date().toISOString(),
+          commits: commits.length,
+          breaking: commits.some(c => c.breaking),
+          types: commits.reduce((acc, c) => {
+            acc[c.type] = (acc[c.type] || 0) + 1
+            return acc
+          }, {} as Record<string, number>),
+        })
+      } catch (error) {
+        // Skip if error
+      }
+    }
+
+    sendJSON(res, timeline)
+  } catch (error: any) {
+    sendError(res, error.message)
+  }
+})
+
+/**
+ * 获取依赖变更历史
+ */
+registerRoute('GET', '/api/dependencies', async (req, res) => {
+  try {
+    const tags = await getGitTags()
+    const dependencies = []
+
+    for (let i = 0; i < Math.min(tags.length, 20); i++) {
+      const tag = tags[i]
+      const nextTag = tags[i + 1]
+
+      try {
+        const gitCommits = await getGitCommits(nextTag || undefined, tag)
+
+        // 查找 package.json 变更
+        const depChanges = []
+        for (const commit of gitCommits) {
+          // 检查提交信息中是否包含 package.json 相关内容
+          const fullMessage = `${commit.subject}\n${commit.body || ''}`
+          if (fullMessage.toLowerCase().includes('package.json') ||
+            fullMessage.toLowerCase().includes('dependencies') ||
+            fullMessage.toLowerCase().includes('dependency')) {
+            depChanges.push({
+              commit: commit.shortHash,
+              message: commit.subject,
+            })
+          }
+        }
+
+        if (depChanges.length > 0) {
+          dependencies.push({
+            version: tag.replace(/^v/, ''),
+            tag,
+            changes: depChanges,
+          })
+        }
+      } catch (error) {
+        // Skip if error
+      }
+    }
+
+    sendJSON(res, dependencies)
+  } catch (error: any) {
+    sendError(res, error.message)
+  }
+})
+
+/**
+ * 搜索 changelog（集成 SearchEngine）
+ */
+registerRoute('POST', '/api/search', async (req, res) => {
+  try {
+    const body = (await parseBody(req)) as {
+      keyword?: string
+      types?: string[]
+      scopes?: string[]
+      authors?: string[]
+      dateRange?: { from?: string; to?: string }
+      page?: number
+      pageSize?: number
+    }
+
+    const from = await getLatestTag()
+    const gitCommits = await getGitCommits(from || undefined, 'HEAD')
+    const repoInfo = await getRepositoryInfo().catch(() => null)
+
+    const parser = createCommitParser({
+      includeAllCommits: true,
+      repositoryInfo: repoInfo || undefined,
+    })
+    const commits = parser.parse(gitCommits)
+
+    // 使用 SearchEngine
+    const { SearchEngine } = await import('../core/SearchEngine.js')
+    const searchEngine = new SearchEngine()
+
+    searchEngine.buildIndex({
+      version: 'current',
+      date: new Date().toISOString(),
+      sections: [],
+      commits,
+    })
+
+    const result = searchEngine.search({
+      keyword: body.keyword,
+      types: body.types,
+      scopes: body.scopes,
+      authors: body.authors,
+      dateRange: body.dateRange ? {
+        from: body.dateRange.from ? new Date(body.dateRange.from) : undefined,
+        to: body.dateRange.to ? new Date(body.dateRange.to) : undefined,
+      } : undefined,
+      pagination: {
+        page: body.page || 1,
+        pageSize: body.pageSize || 20,
+      },
+    })
+
+    sendJSON(res, result)
+  } catch (error: any) {
+    sendError(res, error.message)
+  }
+})
+
+/**
+ * 导出数据（JSON/CSV）
+ */
+registerRoute('POST', '/api/export', async (req, res) => {
+  try {
+    const body = (await parseBody(req)) as {
+      format: 'json' | 'csv'
+      from?: string
+      to?: string
+    }
+
+    const from = body.from || (await getLatestTag()) || undefined
+    const to = body.to || 'HEAD'
+    const gitCommits = await getGitCommits(from, to)
+    const repoInfo = await getRepositoryInfo().catch(() => null)
+
+    const parser = createCommitParser({
+      includeAllCommits: true,
+      repositoryInfo: repoInfo || undefined,
+    })
+    const commits = parser.parse(gitCommits)
+
+    if (body.format === 'csv') {
+      // 生成 CSV
+      const headers = ['Hash', 'Type', 'Scope', 'Subject', 'Author', 'Date', 'Breaking']
+      const rows = commits.map(c => [
+        c.shortHash,
+        c.type,
+        c.scope || '',
+        c.subject,
+        c.author.name,
+        c.date,
+        c.breaking ? 'Yes' : 'No',
+      ])
+
+      const csv = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(',')),
+      ].join('\n')
+
+      res.writeHead(200, {
+        'Content-Type': 'text/csv',
+        'Content-Disposition': 'attachment; filename="changelog.csv"',
+      })
+      res.end(csv)
+    } else {
+      // 生成 JSON
+      sendJSON(res, {
+        version: 'export',
+        date: new Date().toISOString(),
+        commits: commits.map(c => ({
+          hash: c.hash,
+          shortHash: c.shortHash,
+          type: c.type,
+          scope: c.scope,
+          subject: c.subject,
+          body: c.body,
+          author: c.author,
+          date: c.date,
+          breaking: c.breaking,
+        })),
+      })
+    }
   } catch (error: any) {
     sendError(res, error.message)
   }

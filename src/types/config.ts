@@ -75,8 +75,43 @@ export interface ChangelogConfig {
   /** 是否标记安全修复 */
   highlightSecurity?: boolean
 
+  /** 是否追踪依赖变更 */
+  trackDependencies?: boolean
+
+  /** 是否扫描安全问题 */
+  scanSecurity?: boolean
+
+  /** 多语言配置 */
+  multiLang?: MultiLangConfig
+
   /** Monorepo 配置 */
   monorepo?: MonorepoConfig
+}
+
+/**
+ * 多语言配置
+ */
+export interface MultiLangConfig {
+  /** 是否启用多语言生成 */
+  enabled: boolean
+
+  /** 目标语言列表 */
+  targetLanguages?: string[]
+
+  /** 翻译提供者 */
+  provider?: 'ai' | 'google' | 'deepl'
+
+  /** 术语表文件路径 */
+  glossaryPath?: string
+
+  /** 输出文件命名模式 */
+  outputPattern?: string
+
+  /** 是否翻译提交消息 */
+  translateCommits?: boolean
+
+  /** 是否翻译章节标题 */
+  translateSections?: boolean
 }
 
 /**
@@ -230,6 +265,11 @@ export const DEFAULT_CONFIG: Required<Omit<ChangelogConfig, 'template' | 'reposi
   groupByAuthor: false,
   separateDependencies: false,
   highlightSecurity: false,
+  trackDependencies: false,
+  scanSecurity: false,
+  multiLang: {
+    enabled: false,
+  },
   monorepo: {
     enabled: false,
   },

@@ -4,10 +4,13 @@
 
 import { Command } from 'commander'
 import { createChangelogGenerator } from '../../core/ChangelogGenerator.js'
+import { createMultiLangTranslator } from '../../core/MultiLangTranslator.js'
 import { logger } from '../../utils/logger.js'
 import { loadConfig } from '../config-loader.js'
 import { multiSelect, confirm, editText } from '../../utils/interactive.js'
 import type { ChangelogCommit } from '../../types/changelog.js'
+import * as fs from 'fs/promises'
+import * as path from 'path'
 
 /**
  * 创建 generate 命令
@@ -27,6 +30,11 @@ export function createGenerateCommand(): Command {
     .option('--no-write', '不写入文件，仅输出到控制台')
     .option('--interactive', '交互式选择提交')
     .option('--edit', '编辑生成的 Changelog')
+    .option('--track-deps', '追踪依赖变更')
+    .option('--languages <langs>', '生成多语言版本，用逗号分隔 (例如: zh-CN,en-US,ja-JP)')
+    .option('--glossary <file>', '术语表文件路径 (JSON 格式)')
+    .option('--translate-commits', '翻译提交消息 (需要 AI 配置)')
+    .option('--translate-sections', '翻译章节标题')
     .action(async (options) => {
       try {
         const spinner = logger.startSpinner('正在生成 Changelog...')
@@ -41,6 +49,12 @@ export function createGenerateCommand(): Command {
 
         // 创建生成器
         const generator = createChangelogGenerator(config)
+
+        // 启用依赖追踪（如果指定）
+        if (options.trackDeps) {
+          generator.enableDependencyTracking(true)
+          logger.debug('已启用依赖追踪')
+        }
 
         // 生成 Changelog
         const version = options.version || 'Unreleased'
@@ -72,6 +86,15 @@ export function createGenerateCommand(): Command {
           await generator.write(content)
           logger.success(`Changelog 已生成: ${config.output}`)
         }
+
+        // 多语言生成
+        if (options.languages) {
+          await generateMultiLanguageChangelogs(
+            content,
+            options,
+            config
+          )
+        }
       } catch (error: any) {
         logger.stopSpinner(false)
         logger.error('生成 Changelog 失败', error)
@@ -83,11 +106,83 @@ export function createGenerateCommand(): Command {
 }
 
 /**
+ * 生成多语言 Changelog
+ */
+async function generateMultiLanguageChangelogs(
+  content: any,
+  options: any,
+  config: any
+): Promise<void> {
+  try {
+    // 解析语言列表
+    const languages = options.languages.split(',').map((lang: string) => lang.trim())
+
+    logger.info(`正在生成 ${languages.length} 种语言版本...`)
+
+    // 加载术语表（如果提供）
+    let glossary: Record<string, Record<string, string>> | undefined
+    if (options.glossary) {
+      try {
+        const glossaryContent = await fs.readFile(options.glossary, 'utf-8')
+        glossary = JSON.parse(glossaryContent)
+        logger.debug(`已加载术语表: ${options.glossary}`)
+      } catch (error) {
+        logger.warn(`无法加载术语表: ${options.glossary}`)
+      }
+    }
+
+    // 创建翻译器
+    const translator = createMultiLangTranslator({
+      targetLanguages: languages,
+      provider: 'ai',
+      glossary,
+      outputPattern: options.output
+        ? options.output.replace(/\.md$/, '.{lang}.md')
+        : 'CHANGELOG.{lang}.md',
+      translateCommits: options.translateCommits || false,
+      translateSections: options.translateSections !== false, // 默认翻译章节
+      aiConfig: config.ai, // 从配置中获取 AI 配置
+    })
+
+    // 执行翻译
+    const outputDir = options.output
+      ? path.dirname(options.output)
+      : process.cwd()
+
+    const results = await translator.translate(content, outputDir)
+
+    // 写入翻译后的文件
+    for (const result of results) {
+      if (result.error) {
+        logger.warn(`${result.language} 翻译失败: ${result.error}`)
+        continue
+      }
+
+      // 格式化翻译后的内容
+      const generator = createChangelogGenerator(config)
+      const formatted = generator.format(result.content)
+
+      // 写入文件
+      await fs.writeFile(result.outputPath, formatted, 'utf-8')
+
+      logger.success(
+        `${result.language} 版本已生成: ${result.outputPath} (耗时 ${result.duration}ms)`
+      )
+    }
+
+    logger.success(`所有语言版本生成完成`)
+  } catch (error: any) {
+    logger.error('多语言生成失败', error)
+    throw error
+  }
+}
+
+/**
  * 交互式选择提交
  */
 async function interactiveSelectCommits(content: any): Promise<any> {
   console.log('\n')
-  
+
   // 按类型选择
   const typeChoices = content.sections.map((section: any) => ({
     value: section.type,

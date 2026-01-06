@@ -737,6 +737,135 @@ ldesign-changelog release --tag --push
 git push && git push --tags
 ```
 
+## 🔧 故障排除
+
+### 常见问题
+
+#### Q: 执行命令时提示 "Git 命令执行失败"
+
+**原因：** Git 未安装或不在 PATH 中
+
+```bash
+# 检查 Git 是否安装
+git --version
+
+# 确保在 Git 仓库中执行
+git rev-parse --git-dir
+```
+
+#### Q: 生成的 Changelog 为空
+
+**原因：** 没有符合 Conventional Commits 规范的提交
+
+```bash
+# 检查最近的提交格式
+git log --oneline -10
+
+# 如果需要包含所有提交，使用 --include-all-commits 选项
+ldesign-changelog generate --include-all-commits
+```
+
+#### Q: 文件写入权限错误
+
+**解决方案：** 检查输出文件的写入权限
+
+```bash
+# 检查文件权限
+ls -la CHANGELOG.md
+
+# 指定其他输出路径
+ldesign-changelog generate --output ./docs/CHANGELOG.md
+```
+
+#### Q: 如何在 CI 环境中处理安全警告
+
+```bash
+# 启用安全扫描
+ldesign-changelog generate --scan-security
+
+# 在配置文件中启用
+# changelog.config.js
+export default {
+  scanSecurity: true,
+  highlightSecurity: true
+}
+```
+
+### 错误处理
+
+本工具提供了统一的错误类型，方便在代码中处理：
+
+```typescript
+import {
+  ChangelogError,
+  GitError,
+  ConfigError,
+  FileError,
+  ErrorCode,
+  isChangelogError
+} from '@ldesign/changelog'
+
+try {
+  await generator.generate('1.0.0')
+} catch (error) {
+  if (isChangelogError(error)) {
+    switch (error.code) {
+      case ErrorCode.GIT_COMMAND_FAILED:
+        console.error('Git 命令失败，请检查 Git 环境')
+        break
+      case ErrorCode.CONFIG_INVALID:
+        console.error('配置文件无效，请检查 changelog.config.js')
+        break
+      case ErrorCode.FILE_NOT_FOUND:
+        console.error('文件未找到，请检查路径')
+        break
+      default:
+        console.error(`错误 [${error.code}]: ${error.message}`)
+    }
+  }
+}
+```
+
+## 📖 API 参考
+
+### 核心模块
+
+| 模块 | 描述 |
+|--------|------|
+| `ChangelogGenerator` | Changelog 生成器核心类 |
+| `CommitParser` | 提交消息解析器 |
+| `StatsAnalyzer` | 统计分析器 |
+| `PluginManager` | 插件管理器 |
+| `AIEnhancer` | AI 增强器 |
+
+### 格式化器
+
+| 模块 | 描述 |
+|--------|------|
+| `MarkdownFormatter` | Markdown 格式输出 |
+| `JsonFormatter` | JSON 格式输出 |
+| `HtmlFormatter` | HTML 格式输出 |
+
+### 工具函数
+
+| 函数 | 描述 |
+|--------|------|
+| `getGitCommits()` | 获取 Git 提交历史 |
+| `getLatestTag()` | 获取最新标签 |
+| `incrementVersion()` | 递增版本号 |
+| `isValidVersion()` | 验证版本号格式 |
+
+### 错误类
+
+| 错误类 | 描述 |
+|--------|------|
+| `ChangelogError` | 基础错误类 |
+| `GitError` | Git 操作错误 |
+| `ConfigError` | 配置错误 |
+| `FileError` | 文件操作错误 |
+| `ApiError` | API 调用错误 |
+| `ValidationError` | 验证错误 |
+
 ## 🤝 贡献
 
 欢迎贡献！请查看 [CONTRIBUTING.md](./CONTRIBUTING.md) 了解详情。
@@ -757,8 +886,40 @@ pnpm dev
 # 运行测试
 pnpm test
 
+# 类型检查
+pnpm run type-check
+
 # 构建
 pnpm build
+```
+
+### 项目结构
+
+```
+src/
+├── cli/              # CLI 命令
+│   ├── commands/     # 各个子命令
+│   ├── index.ts      # CLI 入口
+│   └── config-loader.ts
+├── core/             # 核心功能
+│   ├── ChangelogGenerator.ts
+│   ├── CommitParser.ts
+│   ├── StatsAnalyzer.ts
+│   └── ...
+├── formatters/       # 格式化器
+│   ├── MarkdownFormatter.ts
+│   ├── JsonFormatter.ts
+│   └── HtmlFormatter.ts
+├── integrations/     # 外部集成
+│   ├── GitHubReleaseManager.ts
+│   └── WebhookNotifier.ts
+├── types/            # 类型定义
+├── utils/            # 工具函数
+│   ├── logger.ts     # 日志工具
+│   ├── errors.ts     # 自定义错误
+│   ├── git-utils.ts  # Git 工具
+│   └── version.ts    # 版本工具
+└── index.ts          # 主入口
 ```
 
 ## 📄 许可证

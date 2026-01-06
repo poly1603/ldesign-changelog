@@ -17,6 +17,9 @@ import type {
 } from '../types/changelog.js'
 import { CommitParser } from './CommitParser.js'
 import { StatsAnalyzer } from './StatsAnalyzer.js'
+import { DependencyTracker } from './DependencyTracker.js'
+import { SecurityScanner } from './SecurityScanner.js'
+import type { SecurityIssue } from './SecurityScanner.js'
 import {
   createMarkdownFormatter,
   createJsonFormatter,
@@ -34,7 +37,7 @@ import {
   fileExists,
   backupFile,
 } from '../utils/file.js'
-import { logger } from '../utils/logger.js'
+import { logger, toError } from '../utils/logger.js'
 
 /**
  * Changelog 生成器
@@ -47,7 +50,11 @@ export class ChangelogGenerator {
   }
   private parser: CommitParser
   private analyzer: StatsAnalyzer
+  private dependencyTracker: DependencyTracker
+  private securityScanner: SecurityScanner
   private repoInfo: RepositoryInfo | null = null
+  private trackDependencies: boolean = false
+  private scanSecurity: boolean = false
 
   constructor(config: ChangelogConfig = {}) {
     // 合并默认配置
@@ -68,6 +75,20 @@ export class ChangelogGenerator {
       calculatePercentage: true,
       analyzeFrequency: true,
     })
+
+    // 初始化依赖追踪器
+    this.dependencyTracker = new DependencyTracker({
+      cwd: this.config.cwd,
+    })
+
+    // 初始化安全扫描器
+    this.securityScanner = new SecurityScanner()
+
+    // 从配置中读取依赖追踪设置
+    this.trackDependencies = config.trackDependencies ?? false
+
+    // 从配置中读取安全扫描设置
+    this.scanSecurity = config.scanSecurity ?? false
 
     // 初始化仓库信息
     this.initializeRepository().catch(() => {
@@ -111,6 +132,22 @@ export class ChangelogGenerator {
   }
 
   /**
+   * 启用依赖追踪
+   */
+  enableDependencyTracking(enabled: boolean = true): void {
+    this.trackDependencies = enabled
+    logger.debug(`依赖追踪已${enabled ? '启用' : '禁用'}`)
+  }
+
+  /**
+   * 启用安全扫描
+   */
+  enableSecurityScanning(enabled: boolean = true): void {
+    this.scanSecurity = enabled
+    logger.debug(`安全扫描已${enabled ? '启用' : '禁用'}`)
+  }
+
+  /**
    * 生成 Changelog
    */
   async generate(version: string, from?: string, to = 'HEAD'): Promise<ChangelogContent> {
@@ -130,7 +167,47 @@ export class ChangelogGenerator {
     logger.debug(`解析了 ${commits.length} 个有效提交`)
 
     // 按类型分组
-    const sections = this.createSections(commits)
+    let sections = this.createSections(commits)
+
+    // 如果启用了安全扫描，添加安全章节
+    let securityIssues: SecurityIssue[] = []
+    if (this.scanSecurity) {
+      try {
+        logger.debug('正在扫描安全问题...')
+        securityIssues = await this.securityScanner.scan(commits)
+
+        if (securityIssues.length > 0) {
+          const securitySection = this.createSecuritySection(securityIssues, commits)
+          // 将安全章节添加到最前面（优先级最高）
+          sections = [securitySection, ...sections]
+          logger.debug(`检测到 ${securityIssues.length} 个安全问题`)
+        } else {
+          logger.debug('未检测到安全问题')
+        }
+      } catch (error) {
+        logger.warn('安全扫描失败', toError(error))
+      }
+    }
+
+    // 如果启用了依赖追踪，添加依赖变更章节
+    if (this.trackDependencies) {
+      try {
+        logger.debug('正在追踪依赖变更...')
+        const dependencyChanges = await this.dependencyTracker.extractChanges(commits)
+
+        if (dependencyChanges.length > 0) {
+          const dependencySection = this.dependencyTracker.formatChanges(dependencyChanges)
+          // 将依赖章节添加到安全章节之后
+          const insertIndex = this.scanSecurity && securityIssues.length > 0 ? 1 : 0
+          sections.splice(insertIndex, 0, dependencySection)
+          logger.debug(`检测到 ${dependencyChanges.length} 个依赖变更`)
+        } else {
+          logger.debug('未检测到依赖变更')
+        }
+      } catch (error) {
+        logger.warn('依赖追踪失败', toError(error))
+      }
+    }
 
     // 提取 Breaking Changes
     const breakingChanges = this.extractBreakingChanges(commits)
@@ -203,6 +280,59 @@ export class ChangelogGenerator {
     })
 
     return sections
+  }
+
+  /**
+   * 创建安全章节
+   */
+  private createSecuritySection(
+    securityIssues: SecurityIssue[],
+    commits: ChangelogCommit[]
+  ): ChangelogSection {
+    // 获取安全相关的提交
+    const securityCommitHashes = new Set(securityIssues.map(issue => issue.commitHash))
+    const securityCommits = commits.filter(commit => securityCommitHashes.has(commit.hash))
+
+    // 为安全提交添加徽章和 CVE 链接
+    const commitsWithBadges = securityCommits.map(commit => {
+      const issue = securityIssues.find(i => i.commitHash === commit.hash)
+      if (!issue) return commit
+
+      // 添加安全徽章到 subject
+      const badge = this.getSecurityBadge(issue.severity)
+      let subject = `${badge} ${commit.subject}`
+
+      // 如果有 CVE ID，添加链接到 subject
+      if (issue.cveId && issue.cveLink) {
+        subject = `${subject} ([${issue.cveId}](${issue.cveLink}))`
+      }
+
+      return {
+        ...commit,
+        subject,
+        isSecurity: true,
+      }
+    })
+
+    return {
+      title: '🔒 安全更新',
+      type: 'security',
+      commits: commitsWithBadges,
+      priority: -1, // 最高优先级
+    }
+  }
+
+  /**
+   * 获取安全徽章
+   */
+  private getSecurityBadge(severity: SecurityIssue['severity']): string {
+    const badges = {
+      critical: '🚨',
+      high: '⚠️',
+      medium: '⚡',
+      low: 'ℹ️',
+    }
+    return badges[severity] || '🔒'
   }
 
   /**

@@ -93,15 +93,24 @@ export function getUITemplate(): string {
         <a href="#" onclick="showPage('dashboard', event)" class="nav-item active flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium">
           <i class="ti ti-chart-dots-2 text-lg"></i>仪表盘
         </a>
+        <a href="#" onclick="showPage('timeline', event)" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium">
+          <i class="ti ti-timeline text-lg"></i>发布时间线
+        </a>
         <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2 mt-6">功能</div>
         <a href="#" onclick="showPage('changelog', event)" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium">
           <i class="ti ti-file-text text-lg"></i>生成 Changelog
+        </a>
+        <a href="#" onclick="showPage('search', event)" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium">
+          <i class="ti ti-search text-lg"></i>搜索变更
         </a>
         <a href="#" onclick="showPage('commits', event)" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium">
           <i class="ti ti-git-commit text-lg"></i>提交记录
         </a>
         <a href="#" onclick="showPage('releases', event)" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium">
           <i class="ti ti-tag text-lg"></i>版本发布
+        </a>
+        <a href="#" onclick="showPage('dependencies', event)" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium">
+          <i class="ti ti-package text-lg"></i>依赖变更
         </a>
         <a href="#" onclick="showPage('validate', event)" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium">
           <i class="ti ti-check text-lg"></i>提交校验
@@ -111,6 +120,9 @@ export function getUITemplate(): string {
         </a>
         <a href="#" onclick="showPage('contributors', event)" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium">
           <i class="ti ti-users text-lg"></i>贡献者
+        </a>
+        <a href="#" onclick="showPage('metrics', event)" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium">
+          <i class="ti ti-chart-bar text-lg"></i>发布指标
         </a>
         <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2 mt-6">系统</div>
         <a href="#" onclick="showPage('settings', event)" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium">
@@ -132,12 +144,16 @@ export function getUITemplate(): string {
     <!-- Main -->
     <main class="flex-1 overflow-auto bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       ${getDashboardPage()}
+      ${getTimelinePage()}
+      ${getSearchPage()}
       ${getChangelogPage()}
       ${getCommitsPage()}
       ${getReleasesPage()}
+      ${getDependenciesPage()}
       ${getValidatePage()}
       ${getDiffPage()}
       ${getContributorsPage()}
+      ${getMetricsPage()}
       ${getSettingsPage()}
     </main>
   </div>
@@ -418,6 +434,169 @@ function getSettingsPage(): string {
   </div>`
 }
 
+function getTimelinePage(): string {
+  return `
+  <div id="page-timeline" class="page p-8 space-y-6 hidden">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold">发布时间线</h1>
+        <p class="text-gray-500 dark:text-gray-400 mt-1">交互式版本发布历史时间线</p>
+      </div>
+      <button onclick="loadTimeline()" class="btn btn-primary px-5 py-2.5 rounded-xl text-white text-sm font-medium flex items-center gap-2">
+        <i class="ti ti-refresh"></i>刷新
+      </button>
+    </div>
+    <div class="card p-6">
+      <div id="timeline-container" class="relative">
+        <div class="text-gray-400 text-center py-12">
+          <i class="ti ti-loader-2 animate-spin text-4xl mb-3"></i>
+          <p>加载时间线数据...</p>
+        </div>
+      </div>
+    </div>
+    <!-- Release Detail Modal -->
+    <div id="release-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50" onclick="closeReleaseModal(event)">
+      <div class="card max-w-2xl w-full mx-4 p-6 max-h-[80vh] overflow-y-auto" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-bold" id="modal-title">版本详情</h3>
+          <button onclick="closeReleaseModal()" class="w-8 h-8 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+        <div id="modal-content"></div>
+      </div>
+    </div>
+  </div>`
+}
+
+function getSearchPage(): string {
+  return `
+  <div id="page-search" class="page p-8 space-y-6 hidden">
+    <div>
+      <h1 class="text-3xl font-bold">搜索变更</h1>
+      <p class="text-gray-500 dark:text-gray-400 mt-1">搜索和过滤 Changelog 条目</p>
+    </div>
+    <div class="card p-6 space-y-4">
+      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div class="lg:col-span-2">
+          <label class="text-sm font-medium text-gray-600 dark:text-gray-300">关键词</label>
+          <input id="search-keyword" type="text" placeholder="搜索提交信息..." class="input-field mt-1.5 w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700/50 outline-none">
+        </div>
+        <div>
+          <label class="text-sm font-medium text-gray-600 dark:text-gray-300">类型</label>
+          <select id="search-type" multiple class="input-field mt-1.5 w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700/50 outline-none">
+            <option value="feat">feat</option>
+            <option value="fix">fix</option>
+            <option value="docs">docs</option>
+            <option value="refactor">refactor</option>
+            <option value="perf">perf</option>
+            <option value="test">test</option>
+            <option value="chore">chore</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-gray-600 dark:text-gray-300">排序</label>
+          <select id="search-sort" class="input-field mt-1.5 w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700/50 outline-none">
+            <option value="date-desc">日期 (新→旧)</option>
+            <option value="date-asc">日期 (旧→新)</option>
+            <option value="relevance">相关性</option>
+            <option value="type">类型</option>
+          </select>
+        </div>
+      </div>
+      <button onclick="performSearch()" class="btn btn-primary px-5 py-2.5 rounded-xl text-white font-medium flex items-center gap-2">
+        <i class="ti ti-search"></i>搜索
+      </button>
+    </div>
+    <div class="card p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-lg">搜索结果</h3>
+        <span id="search-count" class="text-sm text-gray-500"></span>
+      </div>
+      <div id="search-results" class="space-y-2">
+        <div class="text-gray-400 text-center py-8">
+          <i class="ti ti-search text-4xl mb-2"></i>
+          <p>输入关键词开始搜索</p>
+        </div>
+      </div>
+      <div id="search-pagination" class="mt-4 flex justify-center gap-2"></div>
+    </div>
+  </div>`
+}
+
+function getDependenciesPage(): string {
+  return `
+  <div id="page-dependencies" class="page p-8 space-y-6 hidden">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold">依赖变更历史</h1>
+        <p class="text-gray-500 dark:text-gray-400 mt-1">查看各版本的依赖包变更</p>
+      </div>
+      <button onclick="loadDependencies()" class="btn btn-primary px-5 py-2.5 rounded-xl text-white text-sm font-medium flex items-center gap-2">
+        <i class="ti ti-refresh"></i>刷新
+      </button>
+    </div>
+    <div id="dependencies-list" class="space-y-4">
+      <div class="text-gray-400 text-center py-12">
+        <i class="ti ti-loader-2 animate-spin text-4xl mb-3"></i>
+        <p>加载依赖变更数据...</p>
+      </div>
+    </div>
+  </div>`
+}
+
+function getMetricsPage(): string {
+  return `
+  <div id="page-metrics" class="page p-8 space-y-6 hidden">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold">发布指标</h1>
+        <p class="text-gray-500 dark:text-gray-400 mt-1">项目发布频率和速度分析</p>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="loadMetrics()" class="btn btn-primary px-5 py-2.5 rounded-xl text-white text-sm font-medium flex items-center gap-2">
+          <i class="ti ti-refresh"></i>刷新
+        </button>
+        <button onclick="exportMetrics()" class="px-5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-700 text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2">
+          <i class="ti ti-download"></i>导出
+        </button>
+      </div>
+    </div>
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div class="card p-5">
+        <div class="text-sm text-gray-500 mb-2">平均发布周期</div>
+        <div id="metric-cycle" class="text-3xl font-bold text-primary-500">-</div>
+        <div class="text-xs text-gray-400 mt-1">天/版本</div>
+      </div>
+      <div class="card p-5">
+        <div class="text-sm text-gray-500 mb-2">最近发布</div>
+        <div id="metric-last" class="text-3xl font-bold text-green-500">-</div>
+        <div class="text-xs text-gray-400 mt-1">天前</div>
+      </div>
+      <div class="card p-5">
+        <div class="text-sm text-gray-500 mb-2">年度发布</div>
+        <div id="metric-yearly" class="text-3xl font-bold text-blue-500">-</div>
+        <div class="text-xs text-gray-400 mt-1">个版本</div>
+      </div>
+      <div class="card p-5">
+        <div class="text-sm text-gray-500 mb-2">发布速度</div>
+        <div id="metric-velocity" class="text-3xl font-bold text-purple-500">-</div>
+        <div class="text-xs text-gray-400 mt-1">提交/版本</div>
+      </div>
+    </div>
+    <div class="grid gap-6 lg:grid-cols-2">
+      <div class="card p-6">
+        <h3 class="font-semibold text-lg mb-4 flex items-center gap-2"><i class="ti ti-chart-line text-primary-500"></i>发布频率趋势</h3>
+        <div class="h-64"><canvas id="chart-release-frequency"></canvas></div>
+      </div>
+      <div class="card p-6">
+        <h3 class="font-semibold text-lg mb-4 flex items-center gap-2"><i class="ti ti-chart-bar text-primary-500"></i>版本规模分布</h3>
+        <div class="h-64"><canvas id="chart-release-size"></canvas></div>
+      </div>
+    </div>
+  </div>`
+}
+
 function getAppScript(): string {
   return `
     // State
@@ -466,9 +645,13 @@ function getAppScript(): string {
       if (e) e.target.closest('.nav-item')?.classList.add('active');
       
       // Load page data
+      if (page === 'timeline') loadTimeline();
+      if (page === 'search') initSearch();
       if (page === 'commits') loadCommits();
       if (page === 'releases') loadReleases();
+      if (page === 'dependencies') loadDependencies();
       if (page === 'contributors') loadContributors();
+      if (page === 'metrics') loadMetrics();
       if (page === 'settings') loadConfig();
       if (page === 'diff') loadTags();
     }
@@ -734,6 +917,250 @@ function getAppScript(): string {
           <div class="flex justify-between py-2"><span class="text-gray-500">显示作者</span><span>\${data.showAuthor ? '是' : '否'}</span></div>
         </div>
       \` : '<p class="text-gray-400 text-center py-4">无法加载配置</p>';
+    }
+
+    // Timeline
+    let timelineData = [];
+    async function loadTimeline() {
+      const data = await api('/timeline');
+      timelineData = data || [];
+      renderTimeline(timelineData);
+    }
+    function renderTimeline(data) {
+      if (!data || data.length === 0) {
+        document.getElementById('timeline-container').innerHTML = '<p class="text-gray-400 text-center py-8">暂无时间线数据</p>';
+        return;
+      }
+      const html = \`
+        <div class="space-y-4">
+          \${data.map((item, i) => \`
+            <div class="flex gap-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 p-4 rounded-xl transition-colors" onclick="showReleaseDetail('\${item.version}')">
+              <div class="flex flex-col items-center">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 text-white flex items-center justify-center font-bold shadow-lg">
+                  v\${item.version.split('.')[0] || '?'}
+                </div>
+                \${i < data.length - 1 ? '<div class="flex-1 w-0.5 bg-gray-200 dark:bg-gray-700 my-2"></div>' : ''}
+              </div>
+              <div class="flex-1 pb-4">
+                <div class="flex items-center gap-3 mb-2">
+                  <h3 class="font-bold text-lg">v\${item.version}</h3>
+                  \${item.breaking ? '<span class="badge bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 text-xs">BREAKING</span>' : ''}
+                  <span class="text-sm text-gray-400">\${new Date(item.date).toLocaleDateString('zh-CN')}</span>
+                </div>
+                <div class="flex items-center gap-4 text-sm text-gray-500">
+                  <span><i class="ti ti-git-commit mr-1"></i>\${item.commits} commits</span>
+                  \${Object.entries(item.types || {}).map(([type, count]) => \`<span class="badge badge-\${type}">\${type}: \${count}</span>\`).join('')}
+                </div>
+              </div>
+            </div>
+          \`).join('')}
+        </div>
+      \`;
+      document.getElementById('timeline-container').innerHTML = html;
+    }
+    function showReleaseDetail(version) {
+      const release = timelineData.find(r => r.version === version);
+      if (!release) return;
+      document.getElementById('modal-title').textContent = \`版本 v\${version} 详情\`;
+      document.getElementById('modal-content').innerHTML = \`
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div><span class="text-gray-500">发布日期:</span> <span class="font-medium">\${new Date(release.date).toLocaleDateString('zh-CN')}</span></div>
+            <div><span class="text-gray-500">提交数:</span> <span class="font-medium">\${release.commits}</span></div>
+          </div>
+          <div>
+            <h4 class="font-semibold mb-2">提交类型分布</h4>
+            <div class="flex flex-wrap gap-2">
+              \${Object.entries(release.types || {}).map(([type, count]) => \`<span class="badge badge-\${type}">\${type}: \${count}</span>\`).join('')}
+            </div>
+          </div>
+          \${release.breaking ? '<div class="p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800"><i class="ti ti-alert-triangle text-red-500 mr-2"></i>此版本包含破坏性变更</div>' : ''}
+        </div>
+      \`;
+      document.getElementById('release-modal').classList.remove('hidden');
+      document.getElementById('release-modal').classList.add('flex');
+    }
+    function closeReleaseModal(e) {
+      if (!e || e.target.id === 'release-modal') {
+        document.getElementById('release-modal').classList.add('hidden');
+        document.getElementById('release-modal').classList.remove('flex');
+      }
+    }
+
+    // Search
+    let searchCurrentPage = 1;
+    function initSearch() {
+      // Initialize search page
+    }
+    async function performSearch(page = 1) {
+      const keyword = document.getElementById('search-keyword').value;
+      const typeSelect = document.getElementById('search-type');
+      const types = Array.from(typeSelect.selectedOptions).map(o => o.value);
+      const sortValue = document.getElementById('search-sort').value;
+      const [sortBy, sortOrder] = sortValue.split('-');
+      
+      searchCurrentPage = page;
+      document.getElementById('search-results').innerHTML = '<div class="text-center py-8 text-gray-400"><i class="ti ti-loader-2 animate-spin text-2xl"></i><p class="mt-2">搜索中...</p></div>';
+      
+      const data = await api('/search', {
+        method: 'POST',
+        body: JSON.stringify({
+          keyword,
+          types: types.length > 0 ? types : undefined,
+          page,
+          pageSize: 20,
+        })
+      });
+      
+      if (!data || data.entries.length === 0) {
+        document.getElementById('search-results').innerHTML = '<p class="text-gray-400 text-center py-8">未找到匹配的结果</p>';
+        document.getElementById('search-count').textContent = '';
+        document.getElementById('search-pagination').innerHTML = '';
+        return;
+      }
+      
+      document.getElementById('search-count').textContent = \`共 \${data.total} 条结果\`;
+      document.getElementById('search-results').innerHTML = data.entries.map(c => \`
+        <div class="commit-row flex items-center gap-4 p-4 rounded-xl">
+          <span class="badge badge-\${c.type || 'chore'}">\${c.type || 'other'}</span>
+          <code class="text-xs text-gray-400 font-mono w-20">\${c.shortHash}</code>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm truncate">\${c.subject}</div>
+            <div class="text-xs text-gray-400 mt-0.5">\${c.scope ? '(' + c.scope + ')' : ''} · \${c.author.name}</div>
+          </div>
+          <span class="text-xs text-gray-400 whitespace-nowrap">\${new Date(c.date).toLocaleDateString('zh-CN')}</span>
+        </div>
+      \`).join('');
+      
+      // Pagination
+      const totalPages = Math.ceil(data.total / data.pageSize);
+      if (totalPages > 1) {
+        const pages = [];
+        for (let i = 1; i <= totalPages; i++) {
+          if (i === 1 || i === totalPages || (i >= page - 2 && i <= page + 2)) {
+            pages.push(\`<button onclick="performSearch(\${i})" class="px-3 py-1.5 rounded-lg \${i === page ? 'bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'} text-sm">\${i}</button>\`);
+          } else if (pages[pages.length - 1] !== '...') {
+            pages.push('...');
+          }
+        }
+        document.getElementById('search-pagination').innerHTML = pages.join('');
+      }
+    }
+
+    // Dependencies
+    async function loadDependencies() {
+      const data = await api('/dependencies');
+      if (!data || data.length === 0) {
+        document.getElementById('dependencies-list').innerHTML = '<p class="text-gray-400 text-center py-12">暂无依赖变更数据</p>';
+        return;
+      }
+      document.getElementById('dependencies-list').innerHTML = data.map(dep => \`
+        <div class="card p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white flex items-center justify-center font-bold">v\${dep.version.split('.')[0]}</span>
+            <div>
+              <h3 class="font-bold">v\${dep.version}</h3>
+              <p class="text-sm text-gray-400">\${dep.changes.length} 个依赖变更</p>
+            </div>
+          </div>
+          <div class="space-y-2">
+            \${dep.changes.map(c => \`
+              <div class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-sm">
+                <code class="text-xs text-gray-400">\${c.commit}</code>
+                <p class="mt-1">\${c.message}</p>
+              </div>
+            \`).join('')}
+          </div>
+        </div>
+      \`).join('');
+    }
+
+    // Metrics
+    let frequencyChart = null;
+    let sizeChart = null;
+    async function loadMetrics() {
+      const data = await api('/releases');
+      if (!data || data.length === 0) {
+        showToast('暂无发布数据', 'warning');
+        return;
+      }
+      
+      // Calculate metrics
+      const now = Date.now();
+      const dates = data.map(r => new Date(r.date).getTime()).sort((a, b) => b - a);
+      const intervals = [];
+      for (let i = 0; i < dates.length - 1; i++) {
+        intervals.push((dates[i] - dates[i + 1]) / (1000 * 60 * 60 * 24));
+      }
+      const avgCycle = intervals.length > 0 ? Math.round(intervals.reduce((a, b) => a + b, 0) / intervals.length) : 0;
+      const lastRelease = Math.round((now - dates[0]) / (1000 * 60 * 60 * 24));
+      const yearAgo = now - 365 * 24 * 60 * 60 * 1000;
+      const yearlyReleases = dates.filter(d => d > yearAgo).length;
+      const avgCommits = Math.round(data.reduce((sum, r) => sum + r.commits, 0) / data.length);
+      
+      document.getElementById('metric-cycle').textContent = avgCycle;
+      document.getElementById('metric-last').textContent = lastRelease;
+      document.getElementById('metric-yearly').textContent = yearlyReleases;
+      document.getElementById('metric-velocity').textContent = avgCommits;
+      
+      // Frequency chart
+      if (frequencyChart) frequencyChart.destroy();
+      const freqCtx = document.getElementById('chart-release-frequency');
+      if (freqCtx) {
+        const last12 = data.slice(0, 12).reverse();
+        frequencyChart = new Chart(freqCtx, {
+          type: 'line',
+          data: {
+            labels: last12.map(r => 'v' + r.version),
+            datasets: [{
+              label: '发布间隔 (天)',
+              data: last12.map((r, i) => i > 0 ? Math.round((new Date(r.date).getTime() - new Date(last12[i-1].date).getTime()) / (1000 * 60 * 60 * 24)) : 0),
+              borderColor: '#6366f1',
+              backgroundColor: 'rgba(99,102,241,0.1)',
+              fill: true,
+              tension: 0.4
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        });
+      }
+      
+      // Size chart
+      if (sizeChart) sizeChart.destroy();
+      const sizeCtx = document.getElementById('chart-release-size');
+      if (sizeCtx) {
+        const last12 = data.slice(0, 12).reverse();
+        sizeChart = new Chart(sizeCtx, {
+          type: 'bar',
+          data: {
+            labels: last12.map(r => 'v' + r.version),
+            datasets: [{
+              label: '提交数',
+              data: last12.map(r => r.commits),
+              backgroundColor: '#6366f1'
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        });
+      }
+    }
+    async function exportMetrics() {
+      const format = confirm('导出为 CSV 格式？(取消则导出 JSON)') ? 'csv' : 'json';
+      const data = await api('/export', { method: 'POST', body: JSON.stringify({ format }) });
+      if (format === 'csv') {
+        const blob = new Blob([data], { type: 'text/csv' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'changelog-export.csv';
+        a.click();
+      } else {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'changelog-export.json';
+        a.click();
+      }
+      showToast('数据已导出', 'success');
     }
 
     // Init

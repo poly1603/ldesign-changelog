@@ -9,7 +9,7 @@ import { readFile, writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { createHash } from 'crypto'
 import type { GitCommit } from '../types/changelog.js'
-import { logger } from './logger.js'
+import { logger, toError } from './logger.js'
 
 /**
  * 缓存配置
@@ -88,7 +88,7 @@ export class GitCacheManager {
       try {
         await mkdir(this.config.cacheDir, { recursive: true })
       } catch (error) {
-        logger.warn('创建缓存目录失败', error)
+        logger.warn('创建缓存目录失败', toError(error))
       }
     }
   }
@@ -373,7 +373,7 @@ export class GitCacheManager {
 
       logger.info('缓存已清除')
     } catch (error) {
-      logger.warn('清除磁盘缓存失败', error)
+      logger.warn('清除磁盘缓存失败', toError(error))
     }
   }
 
@@ -413,7 +413,7 @@ export class GitCacheManager {
         const data = await fetcher()
         await this.set(namespace, params, data)
       } catch (error) {
-        logger.warn(`预热缓存失败: ${namespace}`, error)
+        logger.warn(`预热缓存失败: ${namespace}`, toError(error))
       }
     })
 
